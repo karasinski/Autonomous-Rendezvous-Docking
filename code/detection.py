@@ -44,7 +44,7 @@ for distance in ["5", "10", "20", "40", "60", "80", "100"]:
                 # print(e)
                 pass
 
-        # Sort these arrays from larges to smallest area
+        # Sort these arrays from largest to smallest area
         circles.sort(key=lambda circle: circle[1] ** 2, reverse=True)
         ellipses.sort(key=lambda ellipse: ellipse[1][0] * ellipse[1][1], reverse=True)
         rectangles.sort(key=lambda rectangle: rectangle[2] * rectangle[3], reverse=True)
@@ -70,7 +70,7 @@ for distance in ["5", "10", "20", "40", "60", "80", "100"]:
             cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
         # Show the result
-        # cv2.imshow('ellipse', output)
+        # cv2.imshow('output', output)
         # cv2.waitKey(0)
 
     # Save the result
