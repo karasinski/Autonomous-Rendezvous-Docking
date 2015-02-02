@@ -1,9 +1,9 @@
 import matplotlib
-matplotlib.use('TkAgg')
 import pandas as pd
 import numpy as np
+from scipy.optimize import leastsq
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit, leastsq
 
 
 d = [
@@ -26,25 +26,29 @@ d = [
 
 d = pd.DataFrame(d)
 d.columns = ['distance', 'radius', 'error']
-
 d.plot(kind='scatter', x='distance', y='radius', yerr='error')
 
-
-def exp_fit(x, a, b, c):
-    return a * np.exp(-b * x) + c
-
-popt, pcov = curve_fit(exp_fit, d.distance, d.radius)
-
-fitfunc = lambda p, x: p[0] * np.exp(-p[1] * x) + p[2]
+# Fit function
+fitfunc = lambda p, x: p[0] * np.exp(-p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
 errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
 
-p_init = [32, 0.05, 4]
+p_init = [26, .009, .0008, -.2, 15]
 out = leastsq(errfunc, p_init, args=(d.distance, d.radius, d.error), full_output=1)
+print(out)
 
-x = np.linspace(0, 105, 105)
-fit = exp_fit(x, *out[0])
+x = np.linspace(1, 105)
+fit = lambda x: fitfunc(out[0], x)
+
+# Plot fit vs actual data
 plt.plot(d.distance, d.radius, 'ko', label="Original Data")
-plt.plot(x, fit, 'r-', label="Fitted Curve")
-plt.xlim(0, 105)
+plt.plot(x, fit(x), 'r-', label="Fitted Curve")
+plt.xlim(1, 105)
+plt.legend()
+plt.show()
+
+# Plot RMS
+plt.clf()
+plt.plot(d.distance, d.radius - fit(d.distance), '.', label="RMS")
+plt.xlim(1, 105)
 plt.legend()
 plt.show()
