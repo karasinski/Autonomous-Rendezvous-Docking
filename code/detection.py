@@ -102,7 +102,7 @@ def cluster(data, maxgap):
     return groups
 
 
-for distance in ["5", "10", "20", "40", "60", "80", "100"]:
+def resultant_image(distance):
     # Import images
     image1 = cv2.imread("samples/ISS_" + distance + ".jpeg")
     image2 = cv2.imread("samples/ISS_" + distance + "_HIGHLIGHT.jpeg")
@@ -127,82 +127,111 @@ for distance in ["5", "10", "20", "40", "60", "80", "100"]:
     ret, thresh = cv2.threshold(gray_result, 127, 255, 0)
     contours, heirarchy = cv2.findContours(thresh, 1, 2)
 
-    # Go through contours and detect objects
     output = image1.copy()
+
+    return output, contours
+
+
+def detect_features(contours):
+    ''' Go through contours and detect features '''
     circles, ellipses, rectangles = [], [], []
+    for cnt in contours:
+        try:
+            # Cannot uniquely fit an ellipse with less than 5 points
+            if len(cnt) > 5:
+                ellipse = cv2.fitEllipse(cnt)
+            circle = cv2.minEnclosingCircle(cnt)
+            rectangle = cv2.boundingRect(cnt)
+
+            ellipses.append(ellipse)
+            circles.append(circle)
+            rectangles.append(rectangle)
+        except Exception as e:
+            # print(e)
+            pass
+
+    # Sort these arrays from largest to smallest area, drop repeats
+    circles = list(set(circles))
+    ellipses = list(set(ellipses))
+    rectangles = list(set(rectangles))
+
+    circles.sort(key=lambda circle: circle[1] ** 2, reverse=True)
+    ellipses.sort(key=lambda ellipse: ellipse[1][0] * ellipse[1][1], reverse=True)
+    rectangles.sort(key=lambda rectangle: rectangle[2] * rectangle[3], reverse=True)
+
+    return circles, ellipses, rectangles
+
+
+def best_fit(output, c):
+    '''
+    Try to find the best ellipse, if ellipse fitting fails, fall back to
+    fitting a circle
+    '''
+
+    # Grab the centers of the circles as the 'best guess' location for the
+    # identification markers
+    xy = np.array([circ[0] for circ in c])
+    x = xy[:, 0]
+    y = xy[:, 1]
+
+    # Find the best fit ellipse
+    center, phi, axes = find_ellipse(x, y)
+    if True not in np.isnan(axes):
+        axes = np.array([2 * axes[0], 2 * axes[1]])
+        ellipse_fit = (tuple(abs(center)), tuple(abs(axes)), abs(phi))
+        # print(ellipse_fit)
+        cv2.ellipse(output, ellipse_fit, (0, 0, 255), 2)
+    else:
+        # Find the best fit circle
+        x_fit, y_fit, r_fit, _ = leastsq_circle(x, y)
+        cv2.circle(output, (int(x_fit), int(y_fit)), int(r_fit), (255, 0, 0), 2)
+
+    return output
+
+
+def process_features(output, features):
+    # Grab the largest elements
+    c = features[0][:6]
+    # e = features[0][:6]
+    # r = features[0][:6]
+
+    # Find the largest group of objects that are roughly the same size
+    out = cluster(c, 0.5)
+    c = max(out, key=len)
+    if len(c) != 4:
+        print('Wrong number of elements.')
+
+    # Check the mean and std of the markers
+    print(distance, np.array(c)[:, 1].mean(), np.array(c)[:, 1].std())
+
+    # Draw the elements
+    for circle in c:
+        # Draw an ellipse
+        # cv2.ellipse(output, ellipse, (0, 0, 255), 2)
+
+        # Draw a circle
+        x_c = int(circle[0][0])
+        y_c = int(circle[0][1])
+        r_c = int(circle[1])
+        cv2.circle(output, (x_c, y_c), r_c, (0, 255, 0), 2)
+
+        # Draw a rectangle
+        # x, y, w, h = rectangle
+        # cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+    # Also make a best fit circle
+    output = best_fit(output, c)
+
+    return output
+
+
+for distance in ["5", "10", "15", "20", "25", "30", "35", "40", "45", "50",
+                 "60", "80", "100", "150"]:
+    output, contours = resultant_image(distance)
+
     if contours:
-        for cnt in contours:
-            try:
-                # Cannot uniquely fit an ellipse with less than 5 points
-                if len(cnt) > 5:
-                    ellipse = cv2.fitEllipse(cnt)
-                circle = cv2.minEnclosingCircle(cnt)
-                rectangle = cv2.boundingRect(cnt)
-
-                ellipses.append(ellipse)
-                circles.append(circle)
-                rectangles.append(rectangle)
-            except Exception as e:
-                # print(e)
-                pass
-
-        # Sort these arrays from largest to smallest area, drop repeats
-        circles = list(set(circles))
-        ellipses = list(set(ellipses))
-        rectangles = list(set(rectangles))
-
-        circles.sort(key=lambda circle: circle[1] ** 2, reverse=True)
-        ellipses.sort(key=lambda ellipse: ellipse[1][0] * ellipse[1][1], reverse=True)
-        rectangles.sort(key=lambda rectangle: rectangle[2] * rectangle[3], reverse=True)
-
-        # Grab the largest elements
-        c = circles[:6]
-        e = ellipses[:6]
-        r = rectangles[:6]
-
-        # Find the largest group of objects that are roughly the same size
-        out = cluster(c, 0.5)
-        c = max(out, key=len)
-        if len(c) != 4:
-            print('Wrong number of elements.')
-
-        # Grab the centers of the circles as the 'best guess' location for the
-        # identification markers
-        xy = np.array([circ[0] for circ in c])
-        x = xy[:, 0]
-        y = xy[:, 1]
-
-        # Draw the elements
-        # for circle, ellipse, rectangle in zip(c, e, r):
-        for circle in c:
-            # Draw an ellipse
-            # cv2.ellipse(output, ellipse, (0, 0, 255), 2)
-
-            # Draw a circle
-            x_c = int(circle[0][0])
-            y_c = int(circle[0][1])
-            r_c = int(circle[1])
-            cv2.circle(output, (x_c, y_c), r_c, (0, 255, 0), 2)
-
-            # Draw a rectangle
-            # x, y, w, h = rectangle
-            # cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-
-        # Try to find the best ellipse, if ellipse fitting fails, fall back to
-        # fitting a circle
-
-        # Find the best fit ellipse
-        center, phi, axes = find_ellipse(x, y)
-        if True not in np.isnan(axes):
-            axes = np.array([2 * axes[0], 2 * axes[1]])
-            ellipse_fit = (tuple(abs(center)), tuple(abs(axes)), abs(phi))
-            # print(ellipse_fit)
-            cv2.ellipse(output, ellipse_fit, (0, 0, 255), 2)
-        else:
-            # Find the best fit circle
-            x_fit, y_fit, r_fit, _ = leastsq_circle(x, y)
-            cv2.circle(output, (int(x_fit), int(y_fit)), int(r_fit), (255, 0, 0), 2)
+        features = detect_features(contours)
+        output = process_features(output, features)
 
     # Show the result
     # cv2.imshow('output', output)
