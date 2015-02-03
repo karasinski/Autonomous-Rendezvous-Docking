@@ -189,7 +189,7 @@ def best_fit(output, c):
     return output
 
 
-def process_features(output, features):
+def process_features(distance, output, features):
     # Grab the largest elements
     c = features[0][:6]
     # e = features[0][:6]
@@ -222,20 +222,38 @@ def process_features(output, features):
     # Also make a best fit circle
     output = best_fit(output, c)
 
+    # Estimate distance from target
+    estimated_distance = estimate_distance(c)
+    print('Distance:', distance, 'Estimated distance:', estimated_distance)
+
     return output
 
 
-for distance in ["5", "10", "15", "20", "25", "30", "35", "40", "45", "50",
-                 "60", "80", "100", "150"]:
-    output, contours = resultant_image(distance)
+def estimate_distance(markers):
+    # Find the mean marker size
+    x = np.array(markers)[:, 1].mean()
 
-    if contours:
-        features = detect_features(contours)
-        output = process_features(output, features)
+    # Fit parameters from calibration script
+    p = [1.87599710e+02, -3.59449427e-01, 4.50895146e-02, -2.95463925e+00, 5.29948831e+01]
 
-    # Show the result
-    # cv2.imshow('output', output)
-    # cv2.waitKey(0)
+    return p[0] * np.exp(p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
 
-    # Save the result
-    cv2.imwrite("output/ISS_" + distance + "_features.jpeg", output)
+
+def main():
+    for distance in ["5", "10", "15", "20", "25", "30", "35", "40", "45", "50",
+                     "60", "80", "100", "150"]:
+        output, contours = resultant_image(distance)
+
+        if contours:
+            features = detect_features(contours)
+            output = process_features(distance, output, features)
+
+        # Show the result
+        # cv2.imshow('output', output)
+        # cv2.waitKey(0)
+
+        # Save the result
+        cv2.imwrite("output/ISS_" + distance + "_features.jpeg", output)
+
+if __name__ == "__main__":
+    main()

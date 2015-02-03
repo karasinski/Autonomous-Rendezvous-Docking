@@ -26,29 +26,36 @@ d = [
 
 d = pd.DataFrame(d)
 d.columns = ['distance', 'radius', 'error']
-d.plot(kind='scatter', x='distance', y='radius', yerr='error')
 
-# Fit function
-fitfunc = lambda p, x: p[0] * np.exp(-p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
-errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
 
-p_init = [26, .009, .0008, -.2, 15]
-out = leastsq(errfunc, p_init, args=(d.distance, d.radius, d.error), full_output=1)
-print(out)
+def fitfunc(p, x):
+    y = p[0] * np.exp(p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
+    return y
 
-x = np.linspace(1, 105)
-fit = lambda x: fitfunc(out[0], x)
+
+def residuals(p, x, y):
+    return y - fitfunc(p, x)
+
+
+x = np.array(d.radius)
+y = np.array(d.distance)
+
+p_guess = [1.87599710e+02, -3.59449427e-01, 4.50895146e-02, -2.95463925e+00, 5.29948831e+01]
+p, cov, infodict, mesg, ier = leastsq(residuals, p_guess, args=(x, y), full_output=True)
+xp = np.linspace(0, 35)
+pxp = fitfunc(p, xp)
 
 # Plot fit vs actual data
-plt.plot(d.distance, d.radius, 'ko', label="Original Data")
-plt.plot(x, fit(x), 'r-', label="Fitted Curve")
-plt.xlim(1, 105)
+plt.plot(x, y, 'ko', label='Original Data')
+plt.plot(xp, pxp, 'r-', label='Fitted Curve')
+plt.xlim(0, 35)
 plt.legend()
 plt.show()
 
 # Plot RMS
 plt.clf()
-plt.plot(d.distance, d.radius - fit(d.distance), '.', label="RMS")
-plt.xlim(1, 105)
+resid = residuals(p, x, y)
+plt.plot(x, resid, '.', label='RMS')
+plt.xlim(0, 35)
 plt.legend()
 plt.show()
