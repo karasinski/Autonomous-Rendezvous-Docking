@@ -1,8 +1,14 @@
-from __future__ import division
+from __future__ import division, print_function
 import numpy as np
 from numpy.linalg import eig, inv
 import cv2
 from scipy import optimize
+import urllib
+
+
+RED = (0, 0, 255)
+BLUE = (0, 255, 0)
+GREEN = (255, 0, 0)
 
 
 def calc_R(x, y, xc, yc):
@@ -125,6 +131,7 @@ def resultant_image(distance):
     # Convert this to gray scale and take threshold and contours
     gray_result = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(gray_result, 127, 255, 0)
+    # contours, heirarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours, heirarchy = cv2.findContours(thresh, 1, 2)
 
     output = image1.copy()
@@ -132,9 +139,10 @@ def resultant_image(distance):
     return output, contours
 
 
-def detect_features(contours):
+def detect_features(name, contours):
     ''' Go through contours and detect features '''
     circles, ellipses, rectangles = [], [], []
+    cnts = []
     for cnt in contours:
         try:
             # Cannot uniquely fit an ellipse with less than 5 points
@@ -146,6 +154,11 @@ def detect_features(contours):
             ellipses.append(ellipse)
             circles.append(circle)
             rectangles.append(rectangle)
+
+            area = cv2.contourArea(cnt)
+            perimeter = cv2.arcLength(cnt, True)
+            if area > 0:
+                cnts.append([area, perimeter, cnt])
         except Exception as e:
             # print(e)
             pass
@@ -158,6 +171,33 @@ def detect_features(contours):
     circles.sort(key=lambda circle: circle[1] ** 2, reverse=True)
     ellipses.sort(key=lambda ellipse: ellipse[1][0] * ellipse[1][1], reverse=True)
     rectangles.sort(key=lambda rectangle: rectangle[2] * rectangle[3], reverse=True)
+
+    output = cv2.imread("samples/ISS_" + name + ".jpeg")
+    # for circle in circles:
+    #     print('x', circle[0][0], ', y', circle[0][1], ', r', circle[1])
+    #     # Draw a circle
+    #     x_c = int(circle[0][0])
+    #     y_c = int(circle[0][1])
+    #     r_c = int(circle[1])
+    #     cv2.circle(output, (x_c, y_c), r_c, (0, 255, 0), 2)
+
+    # cv2.imshow('output', output)
+    # cv2.waitKey(0)
+
+    cnts.sort(key=lambda cnt: cnt[0], reverse=True)
+    # print(cnts[0])
+
+
+    rect = cv2.minAreaRect(cnts[0][2])
+    # print(rect)
+
+    box = cv2.cv.BoxPoints(rect)
+    box = np.int0(box)
+    print(box)
+    cv2.drawContours(output,[box],0,(0,0,255),2)
+
+    cv2.imshow('output', output)
+    cv2.waitKey(0)
 
     return circles, ellipses, rectangles
 
@@ -175,11 +215,15 @@ def best_fit(output, c):
     y = xy[:, 1]
 
     # Find the best fit ellipse
-    center, phi, axes = find_ellipse(x, y)
+    try:
+        center, phi, axes = find_ellipse(x, y)
+    except Exception as e:
+        print(e)
+        axes = [np.NaN, np.NaN]
+
     if True not in np.isnan(axes):
         axes = np.array([2 * axes[0], 2 * axes[1]])
         ellipse_fit = (tuple(abs(center)), tuple(abs(axes)), abs(phi))
-        # print(ellipse_fit)
         cv2.ellipse(output, ellipse_fit, (0, 0, 255), 2)
     else:
         # Find the best fit circle
@@ -191,9 +235,9 @@ def best_fit(output, c):
 
 def process_features(distance, output, features):
     # Grab the largest elements
-    c = features[0][:6]
-    # e = features[0][:6]
-    # r = features[0][:6]
+    c = features[0][:10]
+    # print(c[0])
+
 
     # Find the largest group of objects that are roughly the same size
     out = cluster(c, 0.5)
@@ -202,29 +246,30 @@ def process_features(distance, output, features):
         print('Wrong number of elements.')
 
     # Check the mean and std of the markers
-    print(distance, np.array(c)[:, 1].mean(), np.array(c)[:, 1].std())
+    print('*' * 100)
+    # print(features[2][0])
+    # print(distance, np.array(c)[:, 1].mean(), np.array(c)[:, 1].std())
+
+    # Estimate distance from target
+    estimated_distance = estimate_distance(c)
+    print('Estimated distance:', estimated_distance)
 
     # Draw the elements
     for circle in c:
-        # Draw an ellipse
-        # cv2.ellipse(output, ellipse, (0, 0, 255), 2)
-
+        # print('x', circle[0][0], ', y', circle[0][1], ', r', circle[1])
         # Draw a circle
         x_c = int(circle[0][0])
         y_c = int(circle[0][1])
         r_c = int(circle[1])
         cv2.circle(output, (x_c, y_c), r_c, (0, 255, 0), 2)
 
-        # Draw a rectangle
-        # x, y, w, h = rectangle
-        # cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 2)
+    # Attempt to fit
+    # try:
+    #     output = best_fit(output, c)
+    # except Exception as e:
+    #     print('Failed to make a best fit.', e)
 
-    # Also make a best fit circle
-    output = best_fit(output, c)
-
-    # Estimate distance from target
-    estimated_distance = estimate_distance(c)
-    print('Distance:', distance, 'Estimated distance:', estimated_distance)
+    print('')
 
     return output
 
@@ -239,13 +284,32 @@ def estimate_distance(markers):
     return p[0] * np.exp(p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
 
 
+def load_image():
+    width = 1680
+    height = 918
+    try:
+        req = urllib.urlopen('http://127.0.0.1:8080/image?width=' + str(width) + '&height=' + str(height))
+    except IOError:
+        print('EDGE is not running as a local server.')
+
+    arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
+    img = cv2.imdecode(arr, -1)  # 'load it as it is'
+
+
+def central_corners(c):
+    pass
+
+
 def main():
-    for distance in ["5", "10", "15", "20", "25", "30", "35", "40", "45", "50",
-                     "60", "80", "100", "150"]:
+    distances = ["5", "10", "15", "20", "25", "30", "35", "40", "45", "50",
+                 "60", "80", "100", "150"]
+
+    # distances = ["10_PITCH_10", "10_YAW_20"]
+    for distance in distances:
         output, contours = resultant_image(distance)
 
         if contours:
-            features = detect_features(contours)
+            features = detect_features(distance, contours)
             output = process_features(distance, output, features)
 
         # Show the result
