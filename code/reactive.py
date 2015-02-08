@@ -1,5 +1,5 @@
-from multi_rendez import *
 import numpy as np
+from numpy import cos, sin
 
 
 def gaussian(x, mu, sig):
@@ -7,52 +7,35 @@ def gaussian(x, mu, sig):
 
 
 class Satellite(object):
+    ''' Our 'satellite' class to hold all behaviours and sense/act. '''
 
-    def __init__(self, state, n):
+    def __init__(self, state, target, n):
+        # Unpack input vectors
         x0, y0, z0, dx0, dy0, dz0 = state
+        xf, yf, zf, dxf, dyf, dzf = target
 
-        self.state = np.array([x0, y0, z0, dx0, dy0, dz0])
-        self.estimated_state = np.array([x0, y0, z0, dx0, dy0, dz0])
+        # Set basic parameters
         self.n = n
         self.t = 0.
 
+        # Set state, previous state, and estimated state
+        self.state = np.array([x0, y0, z0, dx0, dy0, dz0])
+        self.previous_state = np.array([x0, y0, z0, dx0, dy0, dz0])
+        self.estimated_state = np.array([x0, y0, z0, dx0, dy0, dz0])
+
+        # Set final state
+        self.target_state = np.array([xf, yf, zf, dxf, dyf, dzf])
+
+        # Set list of behaviors to use
+        self.behaviors = [self.move_closer, self.dont_hit,
+                          self.station_keeping, self.stay_on_orbit,
+                          self.return_to_plane]
+
     def move_closer(self):
         ''' No path planning, just get closer in LVLH frame. '''
+
         x, y, z = self.estimated_state[0:3]
-        target_y = 0.
-
-        w = abs(y)
-        sign = np.sign(target_y - y)
-        T = np.array([0, sign, 0])
-
-        return T, w
-
-    def dont_hit(self):
-        ''' Based off distance and relative velocity of target, fire away from target. '''
-        x, y, z = self.estimated_state[0:3]
-        target_y = 0.
-
-        w = 12.88 * .975 ** abs(y)
-        sign = np.sign(target_y - y)
-        T = np.array([0., -sign, 0.])
-
-        return T, w
-
-    def station_keeping(self):
-        ''' When target distance reached, hold position. '''
-        target_y = 10.
-        x, y, z = self.estimated_state[0:3]
-
-        w = 25 * gaussian(y, target_y, 2)
-        sign = np.sign(target_y - y)
-        T = np.array([0, sign * self.state[4], 0])
-
-        return T, w
-
-    def stay_on_orbit(self):
-        ''' If too far off orbital path in horizontal axis, push closer to axis. '''
-        target_x = 0.
-        x, y, z = self.estimated_state[0:3]
+        target_x = self.target_state[0]
 
         w = abs(x)
         sign = np.sign(target_x - x)
@@ -60,7 +43,54 @@ class Satellite(object):
 
         return T, w
 
-    def act(self, t=1.):
+    def dont_hit(self):
+        ''' Based off distance and relative velocity of target, fire away from target. '''
+
+        x, y, z = self.estimated_state[0:3]
+        target_x = self.target_state[0]
+
+        w = 12.88 * .975 ** abs(x)
+        sign = np.sign(target_x - x)
+        T = np.array([-sign, 0., 0.])
+
+        return T, w
+
+    def station_keeping(self):
+        ''' When target distance reached: hold position, don't fire thrusters. '''
+
+        x, y, z = self.estimated_state[0:3]
+        target_x = self.target_state[0]
+
+        w = 25 * gaussian(x, target_x, 2)
+        T = np.array([0., 0., 0.])
+
+        return T, w
+
+    def stay_on_orbit(self):
+        ''' If too far off orbital path in horizontal axis, push closer to axis. '''
+
+        x, y, z = self.estimated_state[0:3]
+        target_y = self.target_state[1]
+
+        w = abs(y)
+        sign = np.sign(target_y - y)
+        T = np.array([0., sign, 0.])
+
+        return T, w
+
+    def return_to_plane(self):
+        ''' If too far out of plane, return. '''
+
+        x, y, z = self.estimated_state[0:3]
+        target_z = self.target_state[2]
+
+        w = abs(z)
+        sign = np.sign(target_z - z)
+        T = np.array([0., 0., sign])
+
+        return T, w
+
+    def act(self, t=0.1):
         ''' Clohessy-Wiltshire equations. '''
 
         self.calculate_velocity()
@@ -81,45 +111,58 @@ class Satellite(object):
 
         # Some error in position estimation.
         err = 0.1
-        x += random.uniform(-err, err)
-        y += random.uniform(-err, err)
-        z += random.uniform(-err, err)
+        x += np.random.uniform(-err, err)
+        y += np.random.uniform(-err, err)
+        z += np.random.uniform(-err, err)
+        x *= np.random.uniform(1 - err, 1 + err)
+        y *= np.random.uniform(1 - err, 1 + err)
+        z *= np.random.uniform(1 - err, 1 + err)
         self.estimated_state[0:3] = np.array([x, y, z])
 
     def calculate_velocity(self):
         ''' Calculate thrusts and weights for each method, and the resulting output. '''
 
+        # Set previous state to be current state, prepare to update current state
+        self.previous_state = self.state
+
         # Get thrusts and weights
-        T_1, w_1 = self.move_closer()
-        T_2, w_2 = self.dont_hit()
-        T_3, w_3 = self.station_keeping()
-        T_4, w_4 = self.stay_on_orbit()
-
-        Ts = [T_1, T_2, T_3, T_4]
-        ws = [w_1, w_2, w_3, w_4]
-
-        # Find weighted average thrust
         top, bottom = 0., 0.
-        for T, w in zip(Ts, ws):
+        for behavior in self.behaviors:
+            T, w = behavior()
             top += T * w
             bottom += w
 
-        # Update velocity state
-        output = top / bottom
-        vx, vy, vz = output
+        # Find weighted average thrust ('desired velocity')
+        optimal_output = top / bottom
+        vx, vy, vz = optimal_output
+        vx_old, vy_old, vz_old = self.previous_state[3:6]
 
-        # Jets have some error
-        err = 0.01
-        vx *= random.uniform(1 - err, 1 + err)
-        vy *= random.uniform(1 - err, 1 + err)
-        vz *= random.uniform(1 - err, 1 + err)
-        output = np.array([vx, vy, vz])
+        # Jets have a minimum thrust output. Jets have some error, fire at +/-
+        # a percentage of error.
+        minimum_thrust = 0.01
+        err = minimum_thrust / 10.
+
+        output = np.array([], dtype=np.float64)
+        for rate, old_rate in zip(optimal_output, self.previous_state[3:6]):
+            # If the desired rate is less than the minimum, don't burn.
+            if abs(rate) < minimum_thrust:
+                rate = 0.
+            elif abs(rate - old_rate) < minimum_thrust:
+                if abs(rate - old_rate) > minimum_thrust / 2:
+                    rate = old_rate + minimum_thrust * np.random.uniform(1 - err, 1 + err)
+                else:
+                    rate = old_rate
+            else:
+                rate *= np.random.uniform(1 - err, 1 + err)
+
+            output = np.append(output, rate)
 
         self.state[3:6] = output
 
 n = 0.0011596575
-initial_state = [5., 100., 0., 0., 0., 0.]
-Inspector = Satellite(initial_state, n)
+initial_state = [100., 5., -5., 0., 0., 0.]
+target_state = [0., 0., 0., 0., 0., 0.]
+Inspector = Satellite(initial_state, target_state, n)
 
 for _ in range(1000):
     print(Inspector.state[0:3])
