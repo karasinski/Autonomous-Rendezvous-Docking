@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 import numpy as np
 from numpy import cos, sin
 
@@ -149,7 +150,8 @@ class Satellite(object):
                 rate = 0.
             elif abs(rate - old_rate) < minimum_thrust:
                 if abs(rate - old_rate) > minimum_thrust / 2:
-                    rate = old_rate + minimum_thrust * np.random.uniform(1 - err, 1 + err)
+                    sign = np.sign(rate - old_rate)
+                    rate = old_rate + sign * minimum_thrust * np.random.uniform(1 - err, 1 + err)
                 else:
                     rate = old_rate
             else:
@@ -164,7 +166,7 @@ initial_state = [100., 5., -5., 0., 0., 0.]
 target_state = [0., 0., 0., 0., 0., 0.]
 Inspector = Satellite(initial_state, target_state, n)
 
-for _ in range(1000):
+for _ in range(2000):
     print(Inspector.state[0:3])
     Inspector.sense()
     Inspector.act()
