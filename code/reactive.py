@@ -38,7 +38,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_x = self.target_state[0]
 
-        w = abs(x)
+        w = abs(target_x - x) + 1
         sign = np.sign(target_x - x)
         T = np.array([sign, 0., 0.])
 
@@ -50,7 +50,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_x = self.target_state[0]
 
-        w = 12.88 * .975 ** abs(x)
+        w = (39. / 40.) ** (x - target_x)
         sign = np.sign(target_x - x)
         T = np.array([-sign, 0., 0.])
 
@@ -62,7 +62,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_x = self.target_state[0]
 
-        w = 25 * gaussian(x, target_x, 2)
+        w = 25. * gaussian(x, target_x, 2)
         T = np.array([0., 0., 0.])
 
         return T, w
@@ -73,7 +73,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_y = self.target_state[1]
 
-        w = abs(y)
+        w = (target_y - y) ** 2 + abs(target_y - y)
         sign = np.sign(target_y - y)
         T = np.array([0., sign, 0.])
 
@@ -85,7 +85,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_z = self.target_state[2]
 
-        w = abs(z)
+        w = (target_z - z) ** 2 + abs(target_z - z)
         sign = np.sign(target_z - z)
         T = np.array([0., 0., sign])
 
@@ -161,12 +161,12 @@ class Satellite(object):
 
         self.state[3:6] = output
 
-n = 0.0011596575
-initial_state = [100., 5., -5., 0., 0., 0.]
-target_state = [0., 0., 0., 0., 0., 0.]
-Inspector = Satellite(initial_state, target_state, n)
+# n = 0.0011596575
+# initial_state = [100., 5., -5., 0., 0., 0.]
+# target_state = [0., 0., 0., 0., 0., 0.]
+# Inspector = Satellite(initial_state, target_state, n)
 
-for _ in range(2000):
-    print(Inspector.state[0:3])
-    Inspector.sense()
-    Inspector.act()
+# for _ in range(2000):
+#     print(Inspector.state[0:3])
+#     Inspector.sense()
+#     Inspector.act()
