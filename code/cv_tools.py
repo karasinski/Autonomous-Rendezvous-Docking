@@ -127,8 +127,9 @@ def estimate_distance(markers):
     return p[0] * np.exp(p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
 
 
-def estimate_state(something):
-    return [x, y, z]
+def estimate_offset(distance, pixels):
+    # Fit parameters from calibration script
+    return distance * pixels / 566.89611162999995
 
 
 def cluster(data, maxgap):
@@ -165,15 +166,27 @@ def SenseYZ(ctr_pt, frame_ctr):
     center = Point(ctr_pt[0], ctr_pt[1])
     frame = Point(frame_ctr[0], frame_ctr[1])
 
-    if(abs(center.x - frame.x) <= 1.0) and (abs(center.y - frame.y) <= 1):
-        center.x = frame.x
-        center.y = frame.y
+    # if(abs(center.x - frame.x) <= 1.0) and (abs(center.y - frame.y) <= 1):
+    #     center.x = frame.x
+    #     center.y = frame.y
 
     temp_pt = Point(center.x, frame.y)
     y = DistanceFormula(center, temp_pt)
     z = DistanceFormula(temp_pt, frame)
 
-    return y, z
+    return np.array([y, z])
+
+
+def estimate_state(center, distance, image):
+    center = [center[1], center[0]]
+    YZ = SenseYZ(center, np.array(image.shape[:2])/2)
+
+    # Estimate state vector
+    X = distance
+    Y = estimate_offset(distance, YZ[0])
+    Z = estimate_offset(distance, YZ[1])
+    print(X, Y, Z)
+    return np.array([X, Y, Z])
 
 # Connect
 dcomm.connect()
@@ -187,8 +200,6 @@ image, contours = scan_docking_port()
 
 # Detect features
 center, distance = detect_features(image, contours)
-center = [center[1], center[0]]
-# print(center, distance)
 
-YZ = SenseYZ(center, np.array(image.shape[:2])/2)
-print(YZ)
+# Estimate state
+state = estimate_state(center, distance, image)
