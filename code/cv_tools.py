@@ -3,14 +3,15 @@ import cv2
 import numpy as np
 import urllib
 from time import sleep
-import math
 
 
 def load_image():
     width = 1600
     height = 900
     try:
-        sleep(.1)
+        # Give the server some room to breath
+        sleep(.02)
+
         req = urllib.urlopen(
             'http://127.0.0.1:8080/image?width=' + str(width) + '&height=' + str(height))
     except IOError:
@@ -21,7 +22,7 @@ def load_image():
     return img
 
 
-def scan_docking_port():
+def scan_docking_port(target):
     # Import images
     target.flags['VRD_HIGHLIGHT_NODE'] = False
     dcomm.client()
@@ -185,21 +186,5 @@ def estimate_state(center, distance, image):
     X = distance
     Y = estimate_offset(distance, YZ[0])
     Z = estimate_offset(distance, YZ[1])
-    print(X, Y, Z)
+
     return np.array([X, Y, Z])
-
-# Connect
-dcomm.connect()
-dcomm.client()
-
-# Find nodes
-target = dcomm.Node("VR_PMA2_AXIAL_TARGET")
-
-# Scan the docking port
-image, contours = scan_docking_port()
-
-# Detect features
-center, distance = detect_features(image, contours)
-
-# Estimate state
-state = estimate_state(center, distance, image)
