@@ -59,3 +59,26 @@ plt.plot(x, resid, '.', label='RMS')
 plt.xlim(0, 35)
 plt.legend()
 plt.show()
+
+# Offset data
+d = [[ 20., 297.24105835],
+     [ 30., 197.75      ],
+     [ 40., 146.25      ],
+     [ 50., 116.25      ],
+     [ 60.,  94.75003052],
+     [ 70.,  80.25      ],
+     [ 80.,  69.40063477],
+     [ 90.,  61.50006104],
+     [100.,  56.25      ],
+     [110.,  50.5       ],
+     [120.,  46.37931824],
+     [130.,  42.75      ],
+     [140.,  40.        ],
+     [150.,  36.88705444]]
+
+d = pd.DataFrame(d)
+d.columns = ['distance', 'pixels']
+d['offset'] = 10.
+d['times'] = d.distance * d.pixels / d.offset
+
+# Distance * # Pixels ~ Constant * Offset

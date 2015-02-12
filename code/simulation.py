@@ -1,6 +1,6 @@
 from reactive import *
 import dcomm as dc
-from time import sleep
+# from time import sleep
 import matplotlib
 import pandas as pd
 import numpy as np
@@ -23,8 +23,9 @@ def update_camera_position(inspector_position):
 dc.connect()
 dc.client()
 
-# Find camera node
+# Find nodes
 CAM = dc.Node("CM_Cam")
+target = dc.Node("VR_PMA2_AXIAL_TARGET")
 
 # Simulation parameters
 n = 0.0011596575
