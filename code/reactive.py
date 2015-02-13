@@ -62,7 +62,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_x = self.target_state[0]
 
-        w = 25. * gaussian(x, target_x, 2)
+        w = 1. * gaussian(x, target_x, 2)
         T = np.array([0., 0., 0.])
 
         return T, w
@@ -161,12 +161,33 @@ class Satellite(object):
 
         self.state[3:6] = output
 
-# n = 0.0011596575
-# initial_state = [100., 5., -5., 0., 0., 0.]
-# target_state = [0., 0., 0., 0., 0., 0.]
-# Inspector = Satellite(initial_state, target_state, n)
 
-# for _ in range(2000):
-#     print(Inspector.state[0:3])
-#     Inspector.sense()
-#     Inspector.act()
+def TestReactive():
+    n = 0.0011596575
+    initial_state = [100., 5., -5., 0., 0., 0.]
+    target_state = [0., 0., 0., 0., 0., 0.]
+
+    Inspector = Satellite(initial_state, target_state, n)
+
+    fuel = 0
+    close_enough = 0.05
+    low_velocity = 0.05
+
+    for _ in range(2000):
+        old_state = np.array(Inspector.state)
+
+        Inspector.sense()
+        Inspector.act()
+        # print(Inspector.state)
+
+        fuel += np.sum(np.abs(Inspector.state[3:6] - old_state[3:6]))
+
+        # Test if docked
+        distance_offset = Inspector.state[0:3] - Inspector.target_state[0:3]
+        relative_velocity = Inspector.state[3:6] - Inspector.target_state[3:6]
+        if all(distance_offset < close_enough) and all(relative_velocity < low_velocity):
+            break
+
+    print("fuel_used", fuel, "time elapsed", Inspector.t)
+
+TestReactive()

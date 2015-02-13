@@ -1,7 +1,6 @@
 from __future__ import division, print_function
-import numpy as np
-import math
 import matplotlib.pyplot as plt
+import numpy as np
 from numpy import cos, sin
 from numpy.linalg import solve
 
@@ -34,7 +33,7 @@ class Satellite(object):
         '''Clohessy-Wiltshire equations'''
 
         n = self.n
-        x0, y0, z0, dx0, dy0, dz0 = self.state  # self.previous_state
+        x0, y0, z0, dx0, dy0, dz0 = self.state
 
         x = (4 - 3 * cos(n * t)) * x0 + (sin(n * t) / n) * dx0 + (2 / n) * (1 - cos(n * t)) * dy0
         y = 6 * (sin(n * t) - n * t) * x0 + y0 - (2 / n) * (1 - cos(n * t)) * dx0 + 1 / n * (4 * sin(n * t) - 3 * n * t) * dy0
@@ -43,8 +42,10 @@ class Satellite(object):
         self.state = np.array([x, y, z, dx0, dy0, dz0])
 
     def DeltaV(self, t):
-        '''find the delta_v required to take the system to zero for some time.
-        assume you start with a known position (x0, y0, z0) '''
+        '''
+        Find the delta_v required to take the system to zero for some time.
+        Assume you start with a known position (x0, y0, z0).
+        '''
 
         x0, y0, z0, dx0, dy0, dz0 = self.state
         n = self.n
@@ -56,14 +57,12 @@ class Satellite(object):
                       [(2.0 / n) * (1.0 - cos(n * t)), 3.0 * t - (4.0 * sin(n * t) / n)]])
 
         x = solve(A, b)
+
         xd0 = x[0]
         yd0 = x[1]
-
         zd0 = -n * z0 * cos(n * t) / sin(n * t)
 
-        # print("deltav: ", xd0, yd0, zd0)
         self.previous_state = np.array([x0, y0, z0, xd0, yd0, zd0])
-        # self.state = np.array([x0, y0, z0, xd0, yd0, zd0])
 
     def ConductRendez(self):
         '''perform the rendezvous using the DeltaV values attained above
@@ -75,7 +74,7 @@ class Satellite(object):
         while t < t_burn_time:
             self.ClohessyWiltshire(self.dt)
             t += self.dt
-            self.t = t
+            self.t += self.dt
 
     def sense(self):
         ''' Use sensors to determine current state and build world model. '''
@@ -93,10 +92,12 @@ class Satellite(object):
         self.estimated_state[0:3] = np.array([x, y, z])
 
     def plan(self):
-        '''Determine parameters for orbital maneuver.
-        Picks 1 of 3 traj. types: Homing, Closing Final Approach.'''
+        '''
+        Determine parameters for orbital maneuver.
+        Picks 1 of 3 traj. types: Homing, Closing Final Approach.
+        '''
         x, y, z = self.estimated_state[0:3]
-        distance = math.sqrt((x)**2 + (y)**2 + (z)**2)
+        distance = np.sqrt((x)**2 + (y)**2 + (z)**2)
 
         # doesn't work if this line is omitted for 0.1 burn time
         # self.state[0:3] = self.estimated_state[0:3]
@@ -110,14 +111,13 @@ class Satellite(object):
         else:
             self.burn_time = 5.0
 
-        # compute the delta v
+        # Compute the delta v
         self.DeltaV(self.burn_time)
 
     def act(self):
-        ''' Clohessy-Wiltshire equations. '''
         ''' Perform open-loop thruster inputs '''
 
-        # check to see if the thrust value is reasonable
+        # Check to see if the thrust value is reasonable
         minimum_thrust = 0.01
         error = minimum_thrust / 10.
 
@@ -149,6 +149,7 @@ class Satellite(object):
 
     def Plot(self, results, dt, filename):
         '''Plot the position of the craft'''
+
         f, (ax1, ax2) = plt.subplots(2, 1)
 
         ax1.set_title('Position After Separation Using Multiple Burns')
@@ -170,34 +171,37 @@ class Satellite(object):
         plt.savefig(filename, format="png")
         plt.close()
 
-n = 0.0011596575
-initial_state = [100., 5., -5., 0., 0., 0.]
-target_state = [0., 0., 0., 0., 0., 0.]
 
-Inspector = Satellite(initial_state, target_state, n)
+def TestDeliberative():
+    n = 0.0011596575
+    initial_state = [100., 5., -5., 0., 0., 0.]
+    target_state = [0., 0., 0., 0., 0., 0.]
 
-output = Inspector.state
-fuel = 0.
-close_enough = 0.05
-low_velocity = 0.05
+    Inspector = Satellite(initial_state, target_state, n)
 
-for _ in range(2000):
-    old_state = np.array(Inspector.state)
-    output = np.vstack((output, old_state))
+    fuel = 0.
+    close_enough = 0.05
+    low_velocity = 0.05
+    output = Inspector.state
 
-    Inspector.sense()
-    Inspector.plan()
-    Inspector.act()
-    print(Inspector.state)
+    for _ in range(2000):
+        old_state = np.array(Inspector.state)
+        output = np.vstack((output, old_state))
 
-    fuel += np.sum(np.abs(Inspector.state[3:6] - old_state[3:6]))
+        Inspector.sense()
+        Inspector.plan()
+        Inspector.act()
+        # print(Inspector.state)
 
-    # Test if docked
-    distance_offset = Inspector.state[0:3] - Inspector.target_state[0:3]
-    relative_velocity = Inspector.state[3:6] - Inspector.target_state[3:6]
-    if all(distance_offset < close_enough) and all(relative_velocity < low_velocity):
-        break
+        fuel += np.sum(np.abs(Inspector.state[3:6] - old_state[3:6]))
 
+        # Test if docked
+        distance_offset = Inspector.state[0:3] - Inspector.target_state[0:3]
+        relative_velocity = Inspector.state[3:6] - Inspector.target_state[3:6]
+        if all(distance_offset < close_enough) and all(relative_velocity < low_velocity):
+            break
 
-print("fuel_used", fuel)
-Inspector.Plot(output, Inspector.dt, "inspect.png")
+    print("fuel_used", fuel, "time elapsed", Inspector.t)
+    # Inspector.Plot(output, Inspector.dt, "inspect.png")
+
+TestDeliberative()
