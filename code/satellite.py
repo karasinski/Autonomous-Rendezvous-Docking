@@ -337,12 +337,12 @@ def TestSatellite(Inspector):
     print(Inspector.name, "dV", Inspector.fuel, "t", Inspector.t)
     Inspector.plot(output)
 
-n = 0.0011596575
-initial_state = [100., 5., -5., 0., 0., 0.]
-target_state = [0., 0., 0., 0., 0., 0.]
+# n = 0.0011596575
+# initial_state = [100., 5., -5., 0., 0., 0.]
+# target_state = [0., 0., 0., 0., 0., 0.]
 
-d = DeliberativeSatellite(initial_state, target_state, n)
-r = ReactiveSatellite(initial_state, target_state, n)
+# d = DeliberativeSatellite(initial_state, target_state, n)
+# r = ReactiveSatellite(initial_state, target_state, n)
 
-TestSatellite(d)
-TestSatellite(r)
+# TestSatellite(d)
+# TestSatellite(r)
