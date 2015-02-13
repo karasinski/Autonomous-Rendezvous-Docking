@@ -1,4 +1,5 @@
 from __future__ import division, print_function
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy import cos, sin
 
@@ -62,7 +63,7 @@ class Satellite(object):
         x, y, z = self.estimated_state[0:3]
         target_x = self.target_state[0]
 
-        w = 1. * gaussian(x, target_x, 2)
+        w = 10. * gaussian(x, target_x, 2)
         T = np.array([0., 0., 0.])
 
         return T, w
@@ -161,6 +162,30 @@ class Satellite(object):
 
         self.state[3:6] = output
 
+    def Plot(self, results, filename):
+        '''Plot the position of the craft'''
+
+        f, (ax1, ax2) = plt.subplots(2, 1)
+
+        ax1.set_title('Position After Separation Using Multiple Burns')
+        ax1.plot(results[:, 0], label='x')
+        ax1.plot(results[:, 1], label='y')
+        ax1.plot(results[:, 2], label='z')
+        ax1.set_ylabel("Position")
+        ax1.set_xlabel("Time (s)")
+        ax1.legend(loc='best')
+
+        ax2.set_title('Velocity After Separation Using Multiple Burns')
+        ax2.plot(results[:, 3], label='dx')
+        ax2.plot(results[:, 4], label='dy')
+        ax2.plot(results[:, 5], label='dz')
+        ax2.set_ylabel("Velocity")
+        ax2.set_xlabel("Time (s)")
+        ax2.legend(loc='best')
+
+        plt.savefig(filename, format="pdf")
+        plt.close()
+
 
 def TestReactive():
     n = 0.0011596575
@@ -172,9 +197,11 @@ def TestReactive():
     fuel = 0
     close_enough = 0.05
     low_velocity = 0.05
+    output = Inspector.state
 
     for _ in range(2000):
         old_state = np.array(Inspector.state)
+        output = np.vstack((output, old_state))
 
         Inspector.sense()
         Inspector.act()
@@ -189,5 +216,6 @@ def TestReactive():
             break
 
     print("fuel_used", fuel, "time elapsed", Inspector.t)
+    Inspector.Plot(output, "reactive.pdf")
 
 TestReactive()

@@ -147,7 +147,7 @@ class Satellite(object):
         # rendezvous
         self.ConductRendez()
 
-    def Plot(self, results, dt, filename):
+    def Plot(self, results, filename):
         '''Plot the position of the craft'''
 
         f, (ax1, ax2) = plt.subplots(2, 1)
@@ -158,7 +158,7 @@ class Satellite(object):
         ax1.plot(results[:, 2], label='z')
         ax1.set_ylabel("Position")
         ax1.set_xlabel("Time (s)")
-        ax1.legend()
+        ax1.legend(loc='best')
 
         ax2.set_title('Velocity After Separation Using Multiple Burns')
         ax2.plot(results[:, 3], label='dx')
@@ -166,9 +166,9 @@ class Satellite(object):
         ax2.plot(results[:, 5], label='dz')
         ax2.set_ylabel("Velocity")
         ax2.set_xlabel("Time (s)")
-        ax2.legend()
+        ax2.legend(loc='best')
 
-        plt.savefig(filename, format="png")
+        plt.savefig(filename, format="pdf")
         plt.close()
 
 
@@ -202,6 +202,6 @@ def TestDeliberative():
             break
 
     print("fuel_used", fuel, "time elapsed", Inspector.t)
-    # Inspector.Plot(output, Inspector.dt, "inspect.png")
+    Inspector.Plot(output, "deliberative.pdf")
 
 TestDeliberative()
