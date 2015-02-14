@@ -97,24 +97,40 @@ def detect_features(image, contours):
 
     box = cv2.cv.BoxPoints(rect)
     box = np.int0(box)
-    # cv2.drawContours(image, [box], 0, (0, 0, 255), 2)
-
-    # cv2.imshow('image', image)
-    # cv2.waitKey(0)
-
-    # return circles, ellipses, rectangles
 
     features = circles, ellipses, rectangles
     c = features[0][:10]
 
     # Find the largest group of objects that are roughly the same size
     out = cluster(c, 0.5)
-    c = max(out, key=len)
-    if len(c) != 4:
-        print('Wrong number of elements.')
+    largest = max(out, key=len)
+
+    if len(largest) != 4:
+        # print('Wrong number of elements, attempting to fix.', len(largest))
+        pass
+
+    # Iterative approach to fix problem
+    tries, diff = 0, 0.1
+    while len(largest) != 4:
+        tries += 1
+
+        if len(largest) > 4:
+            out = cluster(c, 0.5 - diff)
+        elif len(largest) < 4:
+            out = cluster(c, 0.5 + diff)
+        largest = max(out, key=len)
+
+        if len(largest) == 4:
+            # print('Fixed after this many tries', tries)
+            break
+        elif tries > 100:
+            # print('Giving up!')
+            raise ValueError
+        else:
+            diff += 0.01
 
     # Grab estimated distance
-    estimated_distance = estimate_distance(c)
+    estimated_distance = estimate_distance(largest)
     return xy, estimated_distance
 
 
@@ -182,9 +198,19 @@ def estimate_state(center, distance, image):
     center = [center[1], center[0]]
     YZ = SenseYZ(center, np.array(image.shape[:2])/2)
 
+    if center[0] > np.array(image.shape[:2])[0]/2:
+        x_sign = 1.
+    else:
+        x_sign = -1.
+
+    if center[1] > np.array(image.shape[:2])[1]/2:
+        y_sign = 1.
+    else:
+        y_sign = -1.
+
     # Estimate state vector
     X = distance
-    Y = estimate_offset(distance, YZ[0])
-    Z = estimate_offset(distance, YZ[1])
+    Y = x_sign * estimate_offset(distance, YZ[0])
+    Z = y_sign * estimate_offset(distance, YZ[1])
 
     return np.array([X, Y, Z])
