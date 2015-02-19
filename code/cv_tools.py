@@ -139,7 +139,7 @@ def estimate_distance(markers):
     x = np.array(markers)[:, 1].mean()
 
     # Fit parameters from calibration script
-    p = [1.87599710e+02, -3.59449427e-01, 4.50895146e-02, -2.95463925e+00, 5.29948831e+01]
+    p = [2.10044493e+02, -3.68823114e-01, 4.66638416e-02, -3.08006328e+00, 5.54876863e+01]
 
     return p[0] * np.exp(p[1] * x) + p[2] * x ** 2 + p[3] * x + p[4]
 
