@@ -1,4 +1,4 @@
-from cv_tools import *
+from __future__ import division, print_function
 from satellite import *
 import dcomm as dc
 import matplotlib
@@ -19,23 +19,29 @@ def update_camera_position(inspector_position):
     return cam_position
 
 
-def RunSimulation(name):
-    output = OrderedDict()
+def RunSimulation(name, sensor):
+    output = pd.Series()
     for initial_state in initial_conditions:
         print(initial_state)
 
         # Run the simulation many times
-        number_of_simulations = 100
-        trial_output = []
+        number_of_simulations = 2
+        trial = pd.Series()
+        trial['x'] = initial_state[0]
+        trial['y'] = initial_state[1]
+        trial['z'] = initial_state[2]
+        trial['type'] = name
+        trial['sensor'] = sensor
+
         for _ in range(number_of_simulations):
             # Initialize Inspector
 
             if name is "Deliberative":
-                Inspector = DeliberativeSatellite(initial_state, target_state, n)
+                Inspector = DeliberativeSatellite(initial_state, target_state, target, sensor)
             elif name is "Reactive":
-                Inspector = ReactiveSatellite(initial_state, target_state, n)
+                Inspector = ReactiveSatellite(initial_state, target_state, target, sensor)
             else:
-                raise Exception
+                raise TypeError
 
             # Set the camera position to be equal to the Inspector position, sync
             # with server
@@ -49,34 +55,23 @@ def RunSimulation(name):
                 CAM.position = cam_position
                 dc.client()
 
-                # Try to use CV
-                try:
-                    # Scan the docking port
-                    image, contours = scan_docking_port(target)
-
-                    # Detect features
-                    center, distance = detect_features(image, contours)
-
-                    # Estimate state
-                    state = estimate_state(center, distance, image)
-
-                    print('Estimated: ', state)
-                    print('   Actual: ', Inspector.state[0:3])
-                    print('')
-                except Exception:
-                    print('State not found.')
-
                 # Test if docked
                 if Inspector.docked():
-                    trial_output.append(Inspector.t)
+
+                    trial['time'] = Inspector.t
+                    trial['fuel'] = Inspector.fuel
+                    trial['distance'] = np.sum(np.abs(Inspector.state[1:3]))
+                    trial['rate'] = np.sum(np.abs(Inspector.state[3:6]))
                     break
 
             if time_step == number_of_time_steps - 1:
-                trial_output.append(np.nan)
+                trial['time'] = np.nan
+                trial['fuel'] = Inspector.fuel
+                trial['distance'] = np.sum(np.abs(Inspector.state[1:3]))
+                trial['rate'] = np.sum(np.abs(Inspector.state[3:6]))
+            output = pd.concat((trial, output), axis=1)
 
-        output[str(initial_state[0:3])] = pd.Series(trial_output)
-    df = pd.DataFrame.from_dict(output)
-    return df
+    return output
 
 # Connect to EDGE
 dc.connect()
@@ -86,18 +81,19 @@ dc.client()
 CAM = dc.Node("CM_Cam")
 target = dc.Node("VR_PMA2_AXIAL_TARGET")
 
-# Simulation parameters
-n = 0.0011596575
-
 # Inspector initial and final targets
 initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 100)
                                             for y in range(-50,  51,  50)
-                                            for z in range(-50,  51,  50)]
+                                            for z in range(-37,  38,  37)]
+# initial_conditions = [[50., 10., -7., 0, 0, 0], [70., 10., 0., 0, 0, 0]]
 target_state = [5., 0., 0., 0., 0., 0.]
 
-Deliberative = RunSimulation("Deliberative")
-Reactive = RunSimulation("Reactive")
-results = {"Deliberative": Deliberative,
-           "Reactive": Reactive}
+d_laser = RunSimulation("Deliberative", "laser")
+d_cv = RunSimulation("Deliberative", "cv")
 
-d = pd.Panel(results)
+r_laser = RunSimulation("Reactive", "laser")
+r_cv = RunSimulation("Reactive", "cv")
+
+d = pd.concat((d_laser, d_cv, r_laser, r_cv), axis=1)
+d = d.T
+d.to_csv('output')

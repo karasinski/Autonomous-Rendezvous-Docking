@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy import cos, sin
 from numpy.linalg import solve
+from cv_tools import *
 
 
 def gaussian(x, mu, sig):
@@ -13,18 +14,20 @@ class Satellite(object):
 
     ''' Our base class to hold non-architecture operations. '''
 
-    def __init__(self, state, target, n):
+    def __init__(self, state, target_state, target, sensor):
         # Unpack input vectors
         x0, y0, z0, dx0, dy0, dz0 = state
-        xf, yf, zf, dxf, dyf, dzf = target
+        xf, yf, zf, dxf, dyf, dzf = target_state
 
         # Set basic parameters
-        self.n = n
+        self.n = 0.0011596575
         self.t = 0.
         self.fuel = 0.
         self.laser_error = 0.1
         self.minimum_thrust = 0.01
+        self.dt = 0.1
         self.name = 'Satellite'
+        self.sensor = sensor
 
         # Set state, previous state, estimated state, and optimal velocity
         self.state = np.array([x0, y0, z0, dx0, dy0, dz0])
@@ -34,18 +37,19 @@ class Satellite(object):
 
         # Set final state
         self.target_state = np.array([xf, yf, zf, dxf, dyf, dzf])
+        self.target = target
 
     def docked(self):
         ''' Define distance and velocity for successful capture '''
 
-        close_enough = 0.05  # cm
-        low_velocity = 0.05  # cm/s
+        close_enough = 0.5  # cm
+        low_velocity = 0.5  # cm/s
 
-        distance_offset = self.state[0:3] - self.target_state[0:3]
-        relative_velocity = self.state[3:6] - self.target_state[3:6]
+        distance_offset = np.sum(np.abs(self.state[0:3] - self.target_state[0:3]))
+        relative_velocity = np.sum(np.abs(self.state[3:6] - self.target_state[3:6]))
 
-        return (all(distance_offset < close_enough) and
-                all(relative_velocity < low_velocity))
+        # print(distance_offset, relative_velocity)
+        return distance_offset < close_enough and relative_velocity < low_velocity
 
     def ClohessyWiltshire(self, t):
         '''Clohessy-Wiltshire equations'''
@@ -61,6 +65,16 @@ class Satellite(object):
         self.t += t
 
     def sense(self):
+        if self.sensor == 'laser':
+            self.laser_sense()
+        elif self.sensor == 'cv':
+            self.cv_sense()
+        else:
+            raise TypeError
+
+        # print(self.state[0:3], self.estimated_state[0:3])
+
+    def laser_sense(self):
         ''' Use sensors to estimate relative location. '''
 
         x, y, z = self.state[0:3]
@@ -74,6 +88,27 @@ class Satellite(object):
         z *= np.random.uniform(1 - self.laser_error, 1 + self.laser_error)
         self.estimated_state[0:3] = np.array([x, y, z])
 
+    def cv_sense(self):
+        ''' Try to use CV or fallback to linear guess. '''
+
+        try:
+            # Scan the docking port
+            image, contours = scan_docking_port(self.target)
+
+            # Detect features
+            center, distance = detect_features(image, contours)
+
+            # Estimate state
+            state = estimate_state(center, distance, image)
+            # print('cv')
+
+        except Exception:
+            # State not found, guessing
+            state = self.previous_state[0:3] + self.dt * self.previous_state[3:6]
+            # print('guess')
+
+        self.estimated_state[0:3] = np.array(state)
+
     def thrusters(self):
         ''' Try to fire thrusters at optimal rate, or do our best. '''
 
@@ -81,11 +116,14 @@ class Satellite(object):
         # a percentage of error.
         err = self.minimum_thrust / 10.
 
+        if np.sum(np.abs(self.optimal_velocity)) > 1.:
+            self.optimal_velocity = self.optimal_velocity/np.sum(np.abs(self.optimal_velocity))
+
         output = np.array([], dtype=np.float64)
         for rate, old_rate in zip(self.optimal_velocity, self.previous_state[3:6]):
             # If the desired rate is less than the minimum, don't burn.
             if abs(rate) < self.minimum_thrust:
-                rate = 0.
+                rate = np.random.uniform(-err, err)
             elif abs(rate - old_rate) < self.minimum_thrust:
                 if abs(rate - old_rate) > self.minimum_thrust / 2:
                     sign = np.sign(rate - old_rate)
@@ -93,11 +131,7 @@ class Satellite(object):
                 else:
                     rate = old_rate
             else:
-                # Need to eliminate this difference.
-                if self.name is "Deliberative":
-                    rate *= self.minimum_thrust * np.random.uniform(1 - err, 1 + err)
-                elif self.name is "Reactive":
-                    rate *= np.random.uniform(1 - err, 1 + err)
+                rate *= np.random.uniform(1 - err, 1 + err)
 
             output = np.append(output, rate)
 
@@ -132,9 +166,9 @@ class Satellite(object):
 class ReactiveSatellite(Satellite):
     ''' A reactive satellite architecture. '''
 
-    def __init__(self, state, target, n):
+    def __init__(self, state, target_state, target, sensor):
         # Additional properties
-        Satellite.__init__(self, state, target, n)
+        Satellite.__init__(self, state, target_state, target, sensor)
 
         # Set type
         self.name = 'Reactive'
@@ -214,12 +248,12 @@ class ReactiveSatellite(Satellite):
 
         return T, w
 
-    def act(self, t=0.1):
+    def act(self):
         ''' Merge all behaviors and do a single burn for t seconds. '''
 
         self.calculate_velocity()
         self.thrusters()
-        self.ClohessyWiltshire(t)
+        self.ClohessyWiltshire(self.dt)
 
     def calculate_velocity(self):
         '''
@@ -246,15 +280,14 @@ class DeliberativeSatellite(Satellite):
 
     ''' A deliberative satellite architecture. '''
 
-    def __init__(self, state, target, n):
+    def __init__(self, state, target_state, target, sensor):
         # Call Satellite init method
-        Satellite.__init__(self, state, target, n)
+        Satellite.__init__(self, state, target_state, target, sensor)
 
         # Set type
         self.name = 'Deliberative'
 
         # Additional properties
-        self.dt = 0.1
         self.burn_time = 60.
 
     def step(self):
@@ -271,10 +304,10 @@ class DeliberativeSatellite(Satellite):
         distance = np.sqrt((x)**2 + (y)**2 + (z)**2)
 
         # Final approach
-        if distance <= 500.0:
+        if distance <= 50.0:
             self.burn_time = 0.2
         # Closing
-        elif distance <= 5000.0:
+        elif distance <= 500.0:
             self.burn_time = 1.0
         else:
             self.burn_time = 5.0
@@ -290,9 +323,8 @@ class DeliberativeSatellite(Satellite):
         self.thrusters()
 
         t = 0.
-        t_burn_time = self.burn_time
-
-        while t < t_burn_time:
+        while t < self.burn_time:
+            self.previous_state = self.state
             self.ClohessyWiltshire(self.dt)
             t += self.dt
 
@@ -303,19 +335,21 @@ class DeliberativeSatellite(Satellite):
         '''
 
         x0, y0, z0, dx0, dy0, dz0 = self.state
+        xf, yf, zf, dxf, dyf, dzf = self.target_state
+
         n = self.n
 
         # solve Ax = b
-        b = np.array([(3. * cos(n * t) - 4.) * x0, y0 + 6.0 * x0 * (sin(n * t) - n * t)])
+        b = np.array([(3. * cos(n * t) - 4.) * (x0 - xf), (y0 - yf) + 6. * (x0 - xf) * (sin(n * t) - n * t)])
 
         A = np.array([[(1. / n) * sin(n * t), (2. / n) * (1. - cos(n * t))],
-                      [(2.0 / n) * (1.0 - cos(n * t)), 3.0 * t - (4.0 * sin(n * t) / n)]])
+                      [(2. / n) * (1. - cos(n * t)), 3. * t - (4. * sin(n * t) / n)]])
 
         x = solve(A, b)
 
         xd0 = x[0]
         yd0 = x[1]
-        zd0 = -n * z0 * cos(n * t) / sin(n * t)
+        zd0 = -n * (z0 - zf) * cos(n * t) / sin(n * t)
 
         self.optimal_velocity = np.array([xd0, yd0, zd0])
 

@@ -199,18 +199,18 @@ def estimate_state(center, distance, image):
     YZ = SenseYZ(center, np.array(image.shape[:2])/2)
 
     if center[0] > np.array(image.shape[:2])[0]/2:
-        x_sign = 1.
-    else:
-        x_sign = -1.
-
-    if center[1] > np.array(image.shape[:2])[1]/2:
         y_sign = 1.
     else:
         y_sign = -1.
 
+    if center[1] > np.array(image.shape[:2])[1]/2:
+        z_sign = 1.
+    else:
+        z_sign = -1.
+
     # Estimate state vector
     X = distance
-    Y = x_sign * estimate_offset(distance, YZ[0])
-    Z = y_sign * estimate_offset(distance, YZ[1])
+    Y = y_sign * estimate_offset(distance, YZ[1])
+    Z = z_sign * estimate_offset(distance, YZ[0])
 
     return np.array([X, Y, Z])
