@@ -25,7 +25,7 @@ def RunSimulation(name, sensor):
         print(initial_state)
 
         # Run the simulation many times
-        number_of_simulations = 2
+        number_of_simulations = 10
         trial = pd.Series()
         trial['x'] = initial_state[0]
         trial['y'] = initial_state[1]
@@ -35,7 +35,6 @@ def RunSimulation(name, sensor):
 
         for _ in range(number_of_simulations):
             # Initialize Inspector
-
             if name is "Deliberative":
                 Inspector = DeliberativeSatellite(initial_state, target_state, target, sensor)
             elif name is "Reactive":
@@ -57,7 +56,6 @@ def RunSimulation(name, sensor):
 
                 # Test if docked
                 if Inspector.docked():
-
                     trial['time'] = Inspector.t
                     trial['fuel'] = Inspector.fuel
                     trial['distance'] = np.sum(np.abs(Inspector.state[1:3]))
@@ -70,6 +68,7 @@ def RunSimulation(name, sensor):
                 trial['distance'] = np.sum(np.abs(Inspector.state[1:3]))
                 trial['rate'] = np.sum(np.abs(Inspector.state[3:6]))
             output = pd.concat((trial, output), axis=1)
+            output.to_csv(name + ' ' + sensor)
 
     return output
 
@@ -82,17 +81,17 @@ CAM = dc.Node("CM_Cam")
 target = dc.Node("VR_PMA2_AXIAL_TARGET")
 
 # Inspector initial and final targets
-initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 100)
+initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 200)
                                             for y in range(-50,  51,  50)
                                             for z in range(-37,  38,  37)]
 # initial_conditions = [[50., 10., -7., 0, 0, 0], [70., 10., 0., 0, 0, 0]]
 target_state = [5., 0., 0., 0., 0., 0.]
 
-d_laser = RunSimulation("Deliberative", "laser")
-d_cv = RunSimulation("Deliberative", "cv")
-
 r_laser = RunSimulation("Reactive", "laser")
+d_laser = RunSimulation("Deliberative", "laser")
+
 r_cv = RunSimulation("Reactive", "cv")
+d_cv = RunSimulation("Deliberative", "cv")
 
 d = pd.concat((d_laser, d_cv, r_laser, r_cv), axis=1)
 d = d.T
