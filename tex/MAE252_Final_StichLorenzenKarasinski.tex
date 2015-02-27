@@ -104,7 +104,7 @@ Under normal conditions, the only drift from the intended rendezvous trajectory 
 The primary goal of the study will be to answer the following question:
 
 \begin{quote}
-``What is the relative performance between a deliberative and a reactive control architecture in an autonomous rendezvous docking simulation? Additionally, which architecture executes with the highest capture rate while maintaining the lowest fuel use and time to capture?''
+``What is the relative performance between deliberative and reactive control architectures in an autonomous rendezvous docking simulation? Additionally, which architecture executes with the highest capture rate while maintaining the lowest fuel use and time to capture?''
 \end{quote}
 
 For many space applications, deliberative controllers are used because the dynamics involved are very predictable. Deliberative controllers based on system dynamics are sometimes obvious solutions, however, they may not be the best solution.  The authors would like to determine if a simple reactive control scheme, with no knowledge of the system dynamics, can rival a deliberative controller that is programmed to make calculated reactions within the test environment. 
@@ -268,46 +268,61 @@ The \textit{dynamics} module drives the dynamics and control of the simulation. 
 \subsubsection{DCOMM}
 The \textit{DCOMM} module was previously developed to network between Python scripts and EDGE. The Python DCOMM interface allows a user to call various C++ functions from EDGE's DCOMM module and communicate with an EDGE server. Users can move and rotate nodes, and can also change a node's parents, units, and principal axis definitions. Commands to set the spacecraft's attitude and position were sent from the \textit{dynamics} module through DCOMM and passed on to EDGE. This module was also responsible for requesting and handing off the video feed from the EDGE server.
 
-\subsection{Robotic Architectures}
-Two robotic architectures will be compared to determine their relative performance. The two architectures that will be implemented are a deliberative, Sense-Plan-Act paradigm, and a reactive architecture with weighting functions.
+\subsection{Sensors}
+A system's sensors play an integral role when performing autonomous docking operations with a noncooperative target. As a result, a sensor's ability to accurately determine the system's range to target is imperative for mission success. In this simulation, an autonomous satellite conducts a docking operation, with no \textit{a priori} knowledge of the target, and uses sensors to calculate a real-time orbital trajectory. Additionally, this simulation utilizes two different sensors, computer vision and laser range finder, for each robotic architecture from start to target capture. These results will be compared and discussed in Section~\ref{discuss}, and the superior sensor will be identified for each set of initial conditions. 
 
-The deliberate architecture will consist of three states. The architecture will first Sense, and use sensors to determine the current state and to build the world model. The information gathered in Sense is passed on to Plan, which uses this information to determine parameters for an orbital maneuver. The Plan state will then pick one of three different trajectory types: Homing, Closing, Final Approach. Once this trajectory is planned, the trajectory is passed on to the Act state. The Act state performs open-loop thruster inputs. Once the burn is complete, the state switches back to Sense and the cycle continues until the target is reached.
+\subsubsection{Computer Vision} \label{cv}
+MAKE SURE TO INCLUDE PICTURES TO HELP EXPLAIN THE CV METHODS\\
 
+\subsubsection{Laser Range Finder} \label{laser}
+The second sensor that estimates the satellite's relative location is the laser range finder. Whenever a sensor tries to accurately estimate the position of its respective system, there is an inherent error, or ``noise'', in its measurements as a result of environmental disturbances and drift. 
+For the laser range finder sensor, the current (x, y, z) position of the system is passed into the function, and noise is propagated throughout the system using a two-step method. First, error is added to the position by randomly generating a number between the positive and negative value of the predetermined laser error value. Next, a secondary error is generated between the bounds of one minus or plus the laser error value. This secondary error is multiplied by the modified position, and these new x, y, and z values become the system's estimated position.  For this simulation, it is important to note that the predetermined laser error is manually set by the user, and as such multiple simulations were run to show how varying the error effects the laser range finder's accuracy.
+
+
+\section{Robotic Architectures}
+Two different robotic architectures were utilized in this simulation, deliberative and reactive architectures, and both architectures were tested using either the computer vision or the laser range finder sensors in unique trials. Therefore for a given set of initial conditions, a minimum number of four trials were conducted: Deliberative -- Computer Vision, Deliberative -- Laser Range Finder, Reactive -- Computer Vision, and Reactive -- Laser Range Finder. As previously mentioned, the results comparing both architectures, as well as both sensors, will be discussed in detail in Section ~\ref{discuss}.
+
+\subsection{Deliberative Architecture}
+\subsubsection{Overview}
+A deliberative robotic architecture utilizes a hierarchical paradigm such that data is gathered to create a world model, and, after each iteration, this world model is updated before planning and calculating an action to take place. This architecture conducts steps in series, as opposed to parallel, and places a large emphasis on planning \cite{joshi}.
+
+To mimic this paradigm, the deliberate architecture algorithm will consist of three states. The architecture will first Sense, and use sensors to determine the current state and to build the world model. The information gathered in Sense is passed on to Plan, which uses this information to determine parameters for an orbital maneuver. The Plan state will then pick one of three different trajectory types: Homing, Closing, Final Approach. Once this trajectory is planned, the trajectory is passed on to the Act state. The Act state performs open-loop thruster inputs. Once the burn is complete, the state switches back to Sense and the cycle continues until the target is reached.
+
+\subsubsection{Algorithm}
+As previously mentioned, the deliberate robotic architecture utilizes the Sense-Plan-Act paradigm, and thus the deliberative algorithm was organized in a similar manner. Below is a pseudo-code description of the three main functions that are used to build the world model, compute the desired trajectory, and conduct a corresponding burn. 
+\begin{description}
+\item[\textbf{Sense}] \hfill \\
+elow is a pseudo-code description of the three main functions that are used to build the world model, compute the desired trajectory, and conduct a corresponding burn. 
+\item[\textbf{Plan}]
+\item[\textbf{Act}]
+\end{description}
+\subsection{Reactive Architecture}
+\subsubsection{Overview}
 The reactive architecture makes use of a fuzzy approach where each behavior has a weighted contribution. In this paradigm, the robot takes sensing data and computes the best action to take independently of what the other behaviors decide to do. The robot will then do a combination of the possible behaviors. Four behaviors are currently planned: ``Move closer'', which uses no path planning, but attempts to get closer in LVLH frame; ``Don't hit'', which fires away from the target based off distance and relative velocity of the target; ``Station keeping'', which holds its position when the target region is reached, and ``Stay on orbit'', which pushes closer to the horizontal axis if the system is too far off the orbital path. The resulting thrust, $T$, is calculated by
 \begin{equation}
 T = \frac{ \sum^{n}_{i=0} T_i w_i} { \sum^{n}_{i=0} w_i },
 \end{equation}
 where $T_i$ is the thrust calculated by behavior $i$, $w_i$ is the weight of the behavior, and $n$ is the total number of behaviors.
 
-Each architecture will be run on many different initial conditions. While the primary importance is the distance from the docking port in the $x$ direction, offsets in the $y$ and $z$ directions will also be investigated. Three outputs from each trial will be measured. The most important output from each trial will be whether or not the target craft is captured, but the total $\Delta v$ required and time to capture will also be compared. Variations in the error introduced to the sensors and thrust will also be investigated. These results will be compared for each architecture to determine which performs the best. 
+\subsubsection{Algorithm}
 
-\subsection{Development Timeline}
-Due to the short term nature of the project, an accelerated timeline has been planned. Weeks 1-3 were used for an initial literature and technology review. Key software technologies were chosen based on availability and ease of integration.
 
-Weeks 4 and 5 will be used to develop core dynamics and control functions for the spacecraft. Development during this time will assume perfect knowledge of the relative distance and orientation of the target to test the core approach and hold algorithms. Data collected during this time will be used as a basis for comparison for the final trials where approach is made with noisy sensors.
-
-Weeks 6 and 7 will be used to develop the two robotic architectures necessary for implementing the machine vision based 3D pose estimation. Once basic deliberative and reactive architecture algorithms have been completed, integration between the two Python modules will begin. 
-
-Weeks 8 and 9 will be used for final integration of the submodules. At this time several trials will be run to determine the effectiveness of each operational mode, and to determine which mode is the most effective. The effects of various levels of noise in the sensors will be investigated.
-
-%\section{Architectures}
-%Use this section to describe which Joshi-defined architecture was implemented for our simulation (ie. Reactive, Deliberative Architecture, or both)
-%
-%\section{Techniques and Algorithms}
-%not sure if this section should only be used for the final paper
-
-%final paper only
-%\section{Simulation Results and Discussion}
+\section{Simulation Results and Discussion} \label{discuss}
+Insert pretty plots and tables 
+\subsection{Deliberative Architecture}
+\subsection{Reactive Architecture}
+\subsection{Full Simulation Comparison}
 
 \section{Summary}
 
-Through a virtual simulation environment, the authors will work to implement deliberative and reactive architectures to simulate an autonomous rendezvous docking algorithm. After reading previously conducted studies, the authors will strive to emulate a simplified SPHERES VERTIGO image-processing algorithm, and will test the algorithm using OpenCV and EDGE. Several trials will be conducted to compare these two architectures, and the system's initial conditions and errors will be varied in order to determine its overall effect on fuel usage and time to capture.
+Through a virtual simulation environment, the authors will work to implement deliberative and reactive architectures to test an autonomous rendezvous docking algorithm. After reading previously conducted studies, the authors will strive to emulate a simplified SPHERES VERTIGO image-processing algorithm, and will test the algorithm using OpenCV and EDGE. Several trials will be conducted to compare these two architectures, and the system's initial conditions and errors will be varied in order to determine its overall effect on fuel usage and time to capture.
 
-%final paper only
-%\section{Future Work}
+
+\section{Future Work}
+Talk about applying a Kalman Filter to smooth out the results. Also mention how a KF would definitely improve the Reactive method, and would probably substantially decrease the total fuel usage under this method.
 
 \nocite{*}
 \bibliographystyle{IEEETran}
-\bibliography{MAE252_MT_Paper}{}
+\bibliography{MAE252_Final_Paper}{}
 
 \end{document}
