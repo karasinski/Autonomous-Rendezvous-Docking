@@ -26,6 +26,8 @@
 
 % *** ALIGNMENT PACKAGES ***
 \usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
 
 % *** SUBFIGURE PACKAGES ***
 \ifCLASSOPTIONcompsoc
@@ -290,15 +292,25 @@ To mimic this paradigm, the deliberate architecture algorithm will consist of th
 
 \subsubsection{Algorithm}
 As previously mentioned, the deliberate robotic architecture utilizes the Sense-Plan-Act paradigm, and thus the deliberative algorithm was organized in a similar manner. Below is a pseudo-code description of the three main functions that are used to build the world model, compute the desired trajectory, and conduct a corresponding burn. 
+
 \begin{description}
 \item[\textbf{Sense}] \hfill \\
-elow is a pseudo-code description of the three main functions that are used to build the world model, compute the desired trajectory, and conduct a corresponding burn. 
-\item[\textbf{Plan}]
-\item[\textbf{Act}]
+From the main simulation, an argument is passed into the sense function specifying which sensor, ``cv'' or ``laser'', will be utilized for this trial run. Using this specified argument, the sense function links the deliberative architecture simulation to its respective sensor, and the sensor updates the satellite's estimated state vector accordingly. Refer to Sections \ref{cv} and \ref{laser} for the respective details pertaining to the computer vision and laser range finder sensors.
+
+\item[\textbf{Plan}] \hfill \\
+Using the Sense estimated position values, Plan calculates the distance to target. If the distance is less than 50.0 inches, the satellite enters the Final Approach trajectory, with a burn time equal to 0.2s. Else if the distance to target is less than 500.0 inches, the satellite enters the Closing trajectory and updates the burn time to be equal to 1.0s. Else, the satellite enters the Homing trajectory and utilizes a 5.0s burn time. Then after the appropriate trajectory and burn time have been selected, Plan computes the necessary burn needed to reach the target and perform the appropriate orbital maneuver.
+
+\item[\textbf{Act}] \hfill \\
+Act receives the calculated burn values from Plan, and decides if the specified thrust can be performed. If the desired burn rate is less than the minimum thrust, no burn is conducted. If the desired burn rate is within a specified value, allow the system to burn for a fraction of the desired burn rate. Else, if the desired burn rate is too large, conduct a burn equal to the previous burn rate. This particular series of checks prevents the satellite from performing large impractical burns, and it also makes the system's fuel burns more efficient. As Act is conducting this calculated burn, the satellite's position is simultaneously updated using the Clohessy-Wiltshire equations. 
 \end{description}
+
+This algorithm will continue to perform in a Sense-Plan-Act cycle until the satellite has reached the target.
+
 \subsection{Reactive Architecture}
 \subsubsection{Overview}
-The reactive architecture makes use of a fuzzy approach where each behavior has a weighted contribution. In this paradigm, the robot takes sensing data and computes the best action to take independently of what the other behaviors decide to do. The robot will then do a combination of the possible behaviors. Four behaviors are currently planned: ``Move closer'', which uses no path planning, but attempts to get closer in LVLH frame; ``Don't hit'', which fires away from the target based off distance and relative velocity of the target; ``Station keeping'', which holds its position when the target region is reached, and ``Stay on orbit'', which pushes closer to the horizontal axis if the system is too far off the orbital path. The resulting thrust, $T$, is calculated by
+Unlike the deliberative architecture, a reactive architecture eliminates planning, and thus operates without a global world model. Instead, this method utilizes a parallel approach, and uses a coupled Sense-Act relationship to quickly implement independent behaviors\cite{joshi}. 
+
+This reactive architecture algorithm makes use of a fuzzy approach where each behavior has a weighted contribution. In this paradigm, the robot takes sensing data and computes the best action to take independently of what the other behaviors decide to do. The robot will then do a combination of the possible behaviors. Four behaviors are currently planned: ``Move closer'', which uses no path planning, but attempts to get closer in LVLH frame; ``Don't hit'', which fires away from the target based off distance and relative velocity of the target; ``Station keeping'', which holds its position when the target region is reached, and ``Stay on orbit'', which pushes closer to the horizontal axis if the system is too far off the orbital path. The resulting thrust, $T$, is calculated by
 \begin{equation}
 T = \frac{ \sum^{n}_{i=0} T_i w_i} { \sum^{n}_{i=0} w_i },
 \end{equation}
@@ -308,7 +320,70 @@ where $T_i$ is the thrust calculated by behavior $i$, $w_i$ is the weight of the
 
 
 \section{Simulation Results and Discussion} \label{discuss}
-Insert pretty plots and tables 
+
+% Mean table
+\begin{table*}
+\centering
+\normalsize
+\caption{Simulation Mean Value Results}
+\begin{tabular}{llllll}
+\toprule
+Architecture & Sensor & Time & Fuel & Distance & Rate \\
+\midrule
+Deliberative & cv \\
+			& laser \\
+Reactive & cv \\
+& laser &  353.307037 &    2.487553 &  0.000747 &  0.138028 \\
+\bottomrule
+\end{tabular}
+\label{mean}
+\end{table*}
+
+\vspace{5mm}
+
+% Standard Deviation Table
+\begin{table*}
+\centering
+\normalsize
+\caption{Simulation Standard Deviation Results}
+\begin{tabular}{llllll}
+\toprule
+Architecture & Sensor & Time & Fuel & Distance & Rate \\
+\midrule
+Deliberative & cv \\
+			& laser \\
+Reactive & cv \\
+& laser &  166.281398 &   0.572925 &  0.000732 &  0.169045 \\
+
+\bottomrule
+\end{tabular}
+\label{std_dev}
+\end{table*}
+ 
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figures/error.pdf}
+\caption{Sensor Errors}
+\label{error}
+\end{center}
+\end{figure}
+
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figures/velocity.pdf}
+\caption{Satellite Velocity for a single Deliberative and Reactive Architecture Trial}
+\label{velocity}
+\end{center}
+\end{figure}
+
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figures/v_total.pdf}
+\caption{Example EDGE visualization}
+\label{v_total}
+\end{center}
+\end{figure}
+
 \subsection{Deliberative Architecture}
 \subsection{Reactive Architecture}
 \subsection{Full Simulation Comparison}
