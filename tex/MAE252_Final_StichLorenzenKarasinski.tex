@@ -117,20 +117,20 @@ Over the past 20 years, there have been incredible advancements within the realm
 
 In 2006, the first Synchronized Position Hold Engage Reorient Experiment Satellites (SPHERES), a self-contained nanosatellite made by MIT's Space Systems Laboratory, was launched to the ISS and taken to the US Laboratory. Since that time, this semi-autonomous satellite has been joined by two additional SPHERES, making this system the first consistent experimental nanosatellite testbed aboard the ISS. Unlike the AERCam Sprint and the Mini AERCam, SPHERES is a modular satellite where each system is self-contained in individual capsules. This configuration allows SPHERES to easily incorporate system expansions onto specific platforms, such as navigation, without needing to reconfigure the entire craft. Furthermore, its modularity helps researchers efficiently address system failures, making it easier for astronauts to perform on-site repairs. To navigate SPHERES within the ISS, the system utilizes wall-mounted ultrasonic beacons and corresponding ultrasonic receivers attached to the nanosatellite~\cite{SPHERES}. SPHERES emits an infrared flash to determine its location. Once emitted, the satellite waits for the wall-mounted beacons to emit corresponding ultrasonic pulses. After receiving these ultrasonic pulses, the satellite measures its range based on the pulse's time of flight, and can then calculate its relative position, attitude, and angular velocity~\cite{SPHERES, Vertigo1}. This unique navigation system allows SPHERES to emulate a ``pseudo-GPS'' time-of-flight sensing system, and ultimately estimate its position, angular velocity, and attitude without the potential for signal interference and noise -- a challenge that has been previously encountered with GPS systems~\cite{Vertigo1}. Through this autonomous navigation and modular design, the SPHERES testbed has become a versatile platform for developing vision-based navigation, anti-collision, and formation flying algorithms. By allowing research teams to create algorithms that can then be uplinked to the SPHERES test system aboard the ISS, researchers can receive live feedback, and ultimately find the exact areas within their algorithms that need improvement.
 
-\begin{figure}[tb]
-\begin{center}
-\includegraphics[width=0.4\textwidth]{figures/Spheres_Auto10.pdf}
-\caption{SPHERES time-of-flight range measurements and wall-mounted ultrasound beacons.}
-\label{spheres_plot}
-\end{center}
-\end{figure}
+%\begin{figure}[tb]
+%\begin{center}
+%\includegraphics[width=0.4\textwidth]{figures/Spheres_Auto10.pdf}
+%\caption{SPHERES time-of-flight range measurements and wall-mounted ultrasound beacons.}
+%\label{spheres_plot}
+%\end{center}
+%\end{figure}
 
 \subsection{SPHERES VERTIGO}
 In 2008 the MIT Space Systems Laboratory began building an upgrade to the SPHERES system, known as the Low Impact Inspection Vehicle (LIIVe), as part of the Visual Estimation and Relative Tracking for Inspection of Generic Objects (VERTIGO) program. Once completed, this upgrade would later be attached to the existing SPHERES system and act as VERTIGO ``goggles,'' allowing SPHERES to perform vision-based navigation experiments in the microgravity environment aboard the ISS. After adjusting these VERTIGO Goggles to suit the space station's environment, the final system was upgraded to include two monochrome stereo cameras, two illuminating LEDs, a 1.2 GHz Via Nano processor, an 802.11n network card, and optics that included a larger aperture lens in a synchronized stereo configuration~~\cite{SPHERES, Vertigo 1, Vertigo2, Vertigo3}.
 
 When the modified SPHERES VERTIGO was ready for experimentation, numerous flight algorithms were tested to demonstrate the spacecraft's complete autonomy. After ISS Expedition 34, it was confirmed that SPHERES VERTIGO was capable of autonomously conducting a circular orbit about an uncooperative object, while simultaneously maintaining a constant relative position between SPHERES VERTIGO and the target. This objective was achieved through the primary use of inertial sensors and cameras, and was considered an unprecedented success~\cite{Vertigo2, Vertigo3}.
 
-While the SPHERES VERTIGO made considerable progress over the past few years, this advanced system continues to exhibit an ongoing navigational limitation through the use of ultrasonic beacons and receptors.  As seen in Figure~\ref{spheres_plot}, the navigational hardware requires a total of five wall-mounted ultrasound beacons, confining the SPHERES VERTIGO system to one room within the ISS. This ultimately  limits its overall use, and essentially forces SPHERES VERTIGO to remain as an experimental testbed~\cite{SPHERES, Vertigo 1, Vertigo2, Vertigo3}. Today, researchers are working to expand the system's navigational range by incorporating Google's Project Tango -- a mobile device that can track 3D motion allowing autonomous navigation within a building. Researchers hope that once this hybrid Project Tango and SPHERES system, also known as ``Smart SPHERES,'' has been successfully implemented, the SPHERES nanosatellite will ultimately be able to traverse the entire ISS, performing interior maintenance and inspections ~\cite{Tango}.
+While the SPHERES VERTIGO made considerable progress over the past few years, this advanced system continues to exhibit an ongoing navigational limitation through the use of ultrasonic beacons and receptors.  The navigational hardware requires a total of five wall-mounted ultrasound beacons, confining the SPHERES VERTIGO system to one room within the ISS. This ultimately  limits its overall use, and essentially forces SPHERES VERTIGO to remain as an experimental testbed~\cite{SPHERES, Vertigo 1, Vertigo2, Vertigo3}. Today, researchers are working to expand the system's navigational range by incorporating Google's Project Tango -- a mobile device that can track 3D motion allowing autonomous navigation within a building. Researchers hope that once this hybrid Project Tango and SPHERES system, also known as ``Smart SPHERES,'' has been successfully implemented, the SPHERES nanosatellite will ultimately be able to traverse the entire ISS, performing interior maintenance and inspections ~\cite{Tango}.
 
 \subsection{Collision Avoidance and Docking Algorithms}
 Since the SPHERES nanosatellite's first microgravity guidance, navigation, and control experiment, there have been three classes of algorithms pertaining to collision avoidance and docking that have emerged: metrology, control, and autonomy~\cite{SPHERES_form}.
@@ -271,18 +271,19 @@ The \textit{dynamics} module drives the dynamics and control of the simulation. 
 The \textit{DCOMM} module was previously developed to network between Python scripts and EDGE. The Python DCOMM interface allows a user to call various C++ functions from EDGE's DCOMM module and communicate with an EDGE server. Users can move and rotate nodes, and can also change a node's parents, units, and principal axis definitions. Commands to set the spacecraft's attitude and position were sent from the \textit{dynamics} module through DCOMM and passed on to EDGE. This module was also responsible for requesting and handing off the video feed from the EDGE server.
 
 \subsection{Sensors}
-A system's sensors play an integral role when performing autonomous docking operations with a noncooperative target. As a result, a sensor's ability to accurately determine the system's range to target is imperative for mission success. In this simulation, an autonomous satellite conducts a docking operation, with no \textit{a priori} knowledge of the target, and uses sensors to calculate a real-time orbital trajectory. Additionally, this simulation utilizes two different sensors, computer vision and laser range finder, for each robotic architecture from start to target capture. These results will be compared and discussed in Section~\ref{discuss}, and the superior sensor will be identified for each set of initial conditions. 
+A system's sensors play an integral role when performing autonomous docking operations with a noncooperative target. As a result, a sensor's ability to accurately determine the system's range to target is imperative for mission success. In this simulation, an autonomous satellite conducts a docking operation with no \textit{a priori} knowledge of the target, and uses sensors to calculate a real-time orbital trajectory. Additionally, this simulation utilizes two different sensors, computer vision and laser range finder, for each robotic architecture from start to target capture. These results will be compared and discussed in Section~\ref{discuss}, and the superior sensor will be identified for each set of initial conditions. 
 
 \subsubsection{Computer Vision} \label{cv}
 MAKE SURE TO INCLUDE PICTURES TO HELP EXPLAIN THE CV METHODS\\
 
 \subsubsection{Laser Range Finder} \label{laser}
-The second sensor that estimates the satellite's relative location is the laser range finder. Whenever a sensor tries to accurately estimate the position of its respective system, there is an inherent error, or ``noise'', in its measurements as a result of environmental disturbances and drift. 
-For the laser range finder sensor, the current (x, y, z) position of the system is passed into the function, and noise is propagated throughout the system using a two-step method. First, error is added to the position by randomly generating a number between the positive and negative value of the predetermined laser error value. Next, a secondary error is generated between the bounds of one minus or plus the laser error value. This secondary error is multiplied by the modified position, and these new x, y, and z values become the system's estimated position.  For this simulation, it is important to note that the predetermined laser error is manually set by the user, and as such multiple simulations were run to show how varying the error effects the laser range finder's accuracy.
+The second sensor that estimates the satellite's relative location is the laser range finder. Whenever a sensor tries to accurately estimate the position of its respective system, there is an innate measurement error, or ``noise,'' as a result of environmental disturbances and drift. To accurately simulate how noise effects the system, the simulation trials were first conducted using an exact laser range finder, and then again using a ``noisy'' laser sensor. 
+
+For the noisy laser range finder sensor, the current (x, y, z) position of the system is passed into the function, and noise is propagated throughout the system using a two-step method. First, error is added to the position by randomly generating a number between the positive and negative value of the predetermined laser error. Next, a secondary error is generated between the bounds of one plus/minus the laser error value. This secondary error is multiplied by the modified position, and these new x, y, and z values become the system's estimated position.  For this simulation, it is important to note that the predetermined laser error is manually set by the user, and thus varying the laser error will subsequently adjust the estimated position's magnitude. 
 
 
 \section{Robotic Architectures}
-Two different robotic architectures were utilized in this simulation, deliberative and reactive architectures, and both architectures were tested using either the computer vision or the laser range finder sensors in unique trials. Therefore for a given set of initial conditions, a minimum number of four trials were conducted: Deliberative -- Computer Vision, Deliberative -- Laser Range Finder, Reactive -- Computer Vision, and Reactive -- Laser Range Finder. As previously mentioned, the results comparing both architectures, as well as both sensors, will be discussed in detail in Section ~\ref{discuss}.
+Two different robotic architectures were utilized in this simulation, deliberative and reactive, and both architectures were tested in unique trials using either the computer vision or the laser range finder sensors. Therefore for a given set of initial conditions, a minimum number of six trials were conducted: Deliberative -- Computer Vision, Deliberative -- Laser Range Finder (noisy), Deliberative -- Laser Range Finder (exact), Reactive -- Computer Vision, Reactive -- Laser Range Finder (noisy), and Reactive -- Laser Range Finder (exact). As previously mentioned, the results comparing both architectures, as well as both sensors, will be discussed in detail in Section ~\ref{discuss}.
 
 \subsection{Deliberative Architecture}
 \subsubsection{Overview}
@@ -291,14 +292,14 @@ A deliberative robotic architecture utilizes a hierarchical paradigm such that d
 To mimic this paradigm, the deliberate architecture algorithm will consist of three states. The architecture will first Sense, and use sensors to determine the current state and to build the world model. The information gathered in Sense is passed on to Plan, which uses this information to determine parameters for an orbital maneuver. The Plan state will then pick one of three different trajectory types: Homing, Closing, Final Approach. Once this trajectory is planned, the trajectory is passed on to the Act state. The Act state performs open-loop thruster inputs. Once the burn is complete, the state switches back to Sense and the cycle continues until the target is reached.
 
 \subsubsection{Algorithm}
-As previously mentioned, the deliberate robotic architecture utilizes the Sense-Plan-Act paradigm, and thus the deliberative algorithm was organized in a similar manner. Below is a pseudo-code description of the three main functions that are used to build the world model, compute the desired trajectory, and conduct a corresponding burn. 
+As previously mentioned, the deliberative robotic architecture utilizes the Sense-Plan-Act paradigm, and its algorithm was intuitively organized in a similar manner. Below is a pseudo-code description of the three main functions that are used to build the world model, compute the desired trajectory, and conduct a corresponding burn. 
 
 \begin{description}
 \item[\textbf{Sense}] \hfill \\
-From the main simulation, an argument is passed into the sense function specifying which sensor, ``cv'' or ``laser'', will be utilized for this trial run. Using this specified argument, the sense function links the deliberative architecture simulation to its respective sensor, and the sensor updates the satellite's estimated state vector accordingly. Refer to Sections \ref{cv} and \ref{laser} for the respective details pertaining to the computer vision and laser range finder sensors.
+From the main simulation, an argument is passed into the sense function specifying which sensor, ``cv'', ``laser-noise'', or ``laser-exact'', will be utilized for this trial run. Using this specified argument, the sense function links the deliberative architecture simulation to its respective sensor, and the sensor updates the satellite's estimated state vector accordingly. Refer to Sections \ref{cv} and \ref{laser} for the respective details pertaining to the computer vision and laser range finder sensors.
 
 \item[\textbf{Plan}] \hfill \\
-Using the Sense estimated position values, Plan calculates the distance to target. If the distance is less than 50.0 inches, the satellite enters the Final Approach trajectory, with a burn time equal to 0.2s. Else if the distance to target is less than 500.0 inches, the satellite enters the Closing trajectory and updates the burn time to be equal to 1.0s. Else, the satellite enters the Homing trajectory and utilizes a 5.0s burn time. Then after the appropriate trajectory and burn time have been selected, Plan computes the necessary burn needed to reach the target and perform the appropriate orbital maneuver.
+Using the Sense estimated position values, Plan calculates the distance to target. If the distance is less than 127 cm, the satellite enters the Final Approach trajectory, with a burn time equal to 0.2s. Else if the distance to target is less than 1270 cm, the satellite enters the Closing trajectory and updates the burn time to equal 1.0s. Else, the satellite enters the Homing trajectory and utilizes a 5.0s burn time. Then after the appropriate trajectory and burn time have been selected, Plan computes the necessary burn needed to reach the target and perform the appropriate orbital maneuver.
 
 \item[\textbf{Act}] \hfill \\
 Act receives the calculated burn values from Plan, and decides if the specified thrust can be performed. If the desired burn rate is less than the minimum thrust, no burn is conducted. If the desired burn rate is within a specified value, allow the system to burn for a fraction of the desired burn rate. Else, if the desired burn rate is too large, conduct a burn equal to the previous burn rate. This particular series of checks prevents the satellite from performing large impractical burns, and it also makes the system's fuel burns more efficient. As Act is conducting this calculated burn, the satellite's position is simultaneously updated using the Clohessy-Wiltshire equations. 
@@ -320,49 +321,53 @@ where $T_i$ is the thrust calculated by behavior $i$, $w_i$ is the weight of the
 
 
 \section{Simulation Results and Discussion} \label{discuss}
+A complete simulation was conducted using an initial condition state vector such that the initial x displacement was equal to 100, 300, or 500 inches; the initial y and z displacements were equal to 0, +/- 50, or +/- 37 inches; and the initial velocities were all equal to zero. All initial condition test combinations were simulated, creating a total of 27 different initial condition state vectors. The deliberative and reactive architecture algorithms were independently simulated for both the laser range finder and the computer vision sensors, and 10 trials were simulated for each initial condition state vector. A total of 1080 trial runs were conducted to test which sensor and architecture method achieved an optimal efficiency in fuel usage, time to completion, or both. Refer to Tables \ref{mean} and \ref{std_dev} for the mean value and standard deviations for the satellite's time to completion, the total delta v used, the radial distance from the docking port, and the ``rate,'' or total velocity, of the satellite when it reaches the docking port. Additionally, refer to Table \ref{initial} for the mean fuel usage for an initial state vector with zero initial y and z offsets. 
+
 
 % Mean table
 \begin{table*}
 \centering
 \normalsize
-\caption{Simulation Mean Value Results}
+\caption{Simulation Mean Value Results For All Trial Runs}
 \begin{tabular}{llllll}
 \toprule
-Architecture & Sensor & Time & Fuel & Distance & Rate \\
+Architecture & Sensor & Time (s) & Fuel (cm/s) & Distance (cm) & Rate (cm/s) \\
 \midrule
-Deliberative & cv \\
-			& laser \\
-Reactive & cv \\
-& laser &  353.307037 &    2.487553 &  0.000747 &  0.138028 \\
+Deliberative & cv & 353.307037  & 6.318384 & 0.001898 & 0.350590\\
+			& laser (noise) & 353.557407   & 9.219628 & 0.001824 & 0.351206\\
+			& laser (exact) & 353.503704 & 10.124424 & 0.001811 & 0.356138\\
+Reactive & cv & 371.858889  & 161.473580 & 0.303015 & 0.132178\\
+& laser (noise) &  363.357407 & 277.725357 & 0.032213 & 0.410119 \\
+& laser (exact) & 364.675926 & 49.945871 & 0.141140 & 0.127627\\
 \bottomrule
 \end{tabular}
 \label{mean}
 \end{table*}
 
-\vspace{5mm}
-
 % Standard Deviation Table
 \begin{table*}
 \centering
 \normalsize
-\caption{Simulation Standard Deviation Results}
+\caption{Simulation Standard Deviation Results For All Trial Runs}
 \begin{tabular}{llllll}
 \toprule
-Architecture & Sensor & Time & Fuel & Distance & Rate \\
+Architecture & Sensor & Time (s) & Fuel (cm/s) & Distance (cm) & Rate (cm/s)\\
 \midrule
-Deliberative & cv \\
-			& laser \\
-Reactive & cv \\
-& laser &  166.281398 &   0.572925 &  0.000732 &  0.169045 \\
-
+Deliberative & cv & 166.281398 &  1.455229 & 0.001860 & 0.429374\\
+			& laser (noise) & 166.462108 &  3.635545 & 0.002010 & 0.415513\\
+& laser (exact) & 166.424436 & 4.650075 & 0.001864 & 0.412567\\			
+Reactive & cv & 167.096079 & 72.930148 & 0.125167 & 0.079502\\
+& laser (noise) & 167.138923 & 130.190847 & 0.016381 & 0.209043 \\
+& laser (exact) & 167.232888 & 38.174648 & 0.043787 & 0.011663 \\
 \bottomrule
 \end{tabular}
 \label{std_dev}
 \end{table*}
+
  
-\begin{figure}[tb]
+\begin{figure}
 \begin{center}
-\includegraphics[width=0.5\textwidth]{figures/error.pdf}
+\includegraphics[width=0.5\textwidth]{figures/SensorErrors.pdf}
 \caption{Sensor Errors}
 \label{error}
 \end{center}
@@ -370,23 +375,92 @@ Reactive & cv \\
 
 \begin{figure}[tb]
 \begin{center}
-\includegraphics[width=0.5\textwidth]{figures/velocity.pdf}
-\caption{Satellite Velocity for a single Deliberative and Reactive Architecture Trial}
-\label{velocity}
+\includegraphics[width=0.5\textwidth]{figures/xVelocityClean.pdf}
+\caption{X-Velocity for a Deliberative and Reactive Time Exact Laser Sensor Trial (100, 50, 37)}
+\label{xClean_velocity}
 \end{center}
 \end{figure}
 
 \begin{figure}[tb]
 \begin{center}
-\includegraphics[width=0.5\textwidth]{figures/v_total.pdf}
-\caption{Example EDGE visualization}
-\label{v_total}
+\includegraphics[width=0.5\textwidth]{figures/xVelocityNoisy.pdf}
+\caption{X-Velocity for a Deliberative and Reactive Time Noisy Laser Sensor Trial (100, 50, 37)}
+\label{xNoise_velocity}
 \end{center}
 \end{figure}
 
-\subsection{Deliberative Architecture}
-\subsection{Reactive Architecture}
-\subsection{Full Simulation Comparison}
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figures/TotalVelocityClean.pdf}
+\caption{Total Velocity Profile for a Deliberative and a Reactive Exact Laser Time Trial (100, 50, 37)}
+\label{clean_total}
+\end{center}
+\end{figure}
+
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figures/TotalVelocityNoisy.pdf}
+\caption{Total Velocity Profile for a Deliberative and a Reactive Exact Laser Time Trial (100, 50, 37)}
+\label{noisy_total}
+\end{center}
+\end{figure}
+
+\subsection{Deliberative Architecture: Computer Vision vs. Laser Range Finder}
+
+The deliberative algorithm was simulated for a total of 540 trials, and the means and standard deviations of its results were organized into Tables \ref{mean} and \ref{std_dev}, respectively. As seen in these tables, the computer vision (cv) and laser range finder sensors each had an average run time of approximately 353 seconds, with a standard deviation of about 166 seconds. For both time statistics, the cv was faster by approximately 0.02 seconds -- a slight difference that could essentially be attributed to calculation errors, and is thus too small to accurately distinguish which sensor performed with better time efficiency using the deliberative method. 
+
+Next, to determine which sensor was able to successfully dock the satellite, the final distance between the satellite and the docking port was measured. This distance should essentially go to zero, meaning the laser sensor had a slightly better performance by attaining a final distance of 0.001824 cm at a rate of 0.351 cm/s, as opposed to the cv's final distance of 0.001898 cm at a rate of 0.350 cm/s. However, while the difference between these two satellite-to-port distances is approximately equal to $7.4e-5$cm, the laser had a greater average total fuel usage by about 3 cm/s in comparison to the cv sensor. Furthermore the laser's total fuel usage had a standard deviation equal to about 3.63 cm/s, whereas the computer vision had a standard deviation equal to about 1.46 cm/s, indicating the laser's fuel usage had a greater variance. These significant differences suggest that the computer vision sensor conducted more efficient delta v burns in comparison to the laser range finder sensor. 
+
+ 
+% fuel usage for initial offsets
+\begin{table*}
+\centering
+\normalsize
+\caption{Fuel Usage for a Subset of Simulation Trials}
+\begin{tabular}{lllllll}
+\toprule
+Architecture & Sensor & x(cm) & y(cm) & z(cm) & Mean Fuel(cm/s) & Std. Dev Fuel (cm/s)\\
+\midrule
+Deliberative & cv & 254 &  0 & 0 & 5.873499 & 0.375036\\
+& & 762 &  0 & 0 &  6.272073 & 0.434431\\
+& & 1270 & 0 & 0 &  6.617597 &0.400670\\
+			& laser (exact) & 254 & 0 & 0 &    5.810814 &0.399440\\
+			& & 762 & 0 & 0 &    6.379098 &0.373520\\
+			& & 1270 & 0 & 0 & 7.058843 & 0.484380\\
+			& laser (noise) & 254 & 0 & 0 &    5.780540 &0.383680\\
+			& & 762 & 0 & 0 &    6.346101 &0.336987\\
+			& & 1270 & 0 & 0 & 7.113471 &0.416979\\
+\cmidrule(lr) {1-7}
+Reactive & cv & 254 & 0 & 0 &   66.394292 &5.097201\\
+& & 762 & 0 & 0 &   76.760390 & 4.843838\\
+& & 1270 & 0 & 0 & 85.431635 &12.143697\\
+& laser (exact) & 254 & 0 & 0 &   8.475532 & 0.060457\\
+& & 762 & 0 & 0  &  15.361138 &0.104953\\
+& & 1270 & 0 & 0 & 22.956919 & 0.235527\\
+& laser (noise) & 254 & 0 & 0 &  49.102620 & 2.463416\\
+& & 762 & 0 & 0  &  58.001444 &2.857584\\
+& & 1270 & 0 & 0 & 65.3067299 &2.863291\\
+\bottomrule
+\end{tabular}
+\label{initial}
+\end{table*}
+
+To examine the mean fuel usage as a function of distance, Table \ref{initial} shows the mean fuel usage for both sensors when the only non-zero initial condition was the displacement in the x-direction. As the satellite is initially displaced farther from the target, the average total fuel consumption subsequently increases, and the difference between the cv's and the laser's fuel efficiency begins to increase as a function of distance. For example, when the satellite has a small initial displacement equal to 254 cm, the laser sensor had a better performance with an average total burn rate of about 2.276 cm/s compared to the cv sensor burn rate of approximately 2.312 cm/s. However, as the initial displacement between the satellite and the target increases to 762 cm, the ``more efficient'' sensor switches from the laser range finder to the computer vision sensor, with a better performance by about 0.029 cm/s. Then for the farthest offset of 1270 cm, this difference in fuel efficiency between the cv and laser sensor increases by almost a factor of ten to approximately 0.195 cm/s. 
+
+The main reason why the efficient sensor switches from the laser range finder to the computer vision sensor is because noise was added to the laser's position estimates as a function of distance, whereas no additional noise was added to the computer vision measurements. When utilizing a computer vision sensor, an innate amount of natural error exists from computing image gradients and conducting Canny edge detection algorithms. Since computer vision has a substantial amount of preexisting noise, no additional noise was added to these measurements. However, since noise was only systematically added to the laser's position estimations, there exists a noticeable difference between the amount of error in the laser's calculations as compared to the computer vision's calculations. As seen in Figure \ref{error}, the laser's error has a canonical shape, where the cone has a larger error distribution the farther the satellite is displaced from the docking port. In comparison, the computer vision has a more refined error boundary region, exhibiting a slight sinusoidal behavior as the satellite is displaced closer to the target. Since the laser sensor has a larger error boundary, it is logical to conclude that this large error was then propagated, and ultimately created a larger fuel consumption, as it is likely that the simulation conducted a greater number of correction burns to compensate for the error in the satellite's estimated position. If the amount of added laser sensor error was reduced, the laser range finder would have a smaller error boundary, and its overall performance and fuel efficiency would likely be increased. This reduced error could then effect which sensor proved to have a greater fuel efficiency, and since there is a lower limit on the cv's error, if the reduced error is smaller than this limit, the laser range finder would most likely become the fuel efficient sensor for all simulated initial x-displacements.
+
+\subsection{Reactive Architecture: Computer Vision vs. Laser Range Finder}
+
+\subsection{Deliberative vs. Reactive Architecture}
+
+As seen in Tables \ref{mean} through \ref{initial}, the deliberative algorithm exhibits greater efficiency than the reactive algorithm for both the laser range finder and the computer vision sensors. For the average time to completion, the reactive algorithm exceeds the deliberative method's time by about 10 and 18 seconds for the laser and cv sensors, respectively. However, its standard deviation differs from the deliberative method's standard deviation by less than one second, indicating that significant outliers were not responsible for increasing the average time to completion. As a result of this longer flight time, the reactive method exhibits a significant loss in fuel efficiency. This inefficiency can be seen in Table \ref{mean} where the reactive method utilizes an average total fuel of approximately 161.474 cm/s for a laser range finder sensor -- almost 27 times larger than the deliberative's comparable average fuel use of 6.318 cm/s. Furthermore, despite the reactive method's higher average fuel usage, the reactive method guides the satellite to an average final displacement that is 0.303 cm and 0.032 cm away from the target using the cv and laser sensors, respectively. These final displacements have a significant amount of error when compared to the small average displacements of 0.0018 cm for both deliberative sensors, reinforcing the final conclusion that the deliberative method exhibited greater time and fuel efficiency.
+
+To compare the two architecture methods for a single trial run, refer to figures \ref{velocity} and \ref{v_total} where the system has an initial displacement of 254 cm, 127 cm, and 93.98 cm in the x, y, and z directions, respectively. As seen in Figure \ref{velocity}, the deliberative x-velocity profile maintains a relatively constant velocity of 1.27 cm/s as the satellite moves towards the docking port. When the satellite is approximately 2.54 cm from the target, the delta v burn goes to zero, and the satellite drifts into its final 0.0018 cm displacement. In comparison, the reactive x-velocity profile exhibits a dynamic response, with large velocity spikes for the first 50 cm traveled along the x-direction. As the system continues to move closer, large velocity spikes occur intermittently for approximately every 50 cm between the 203 cm and 100 cm displacement points. Once the satellite reaches approximately 75 cm from the docking port, large delta v burns along the x-direction increase in frequency, with a final velocity spike at approximately 2.54 cm from target. If the total velocity profiles for each architecture is closely examined, the constant deliberative and the dynamic reactive velocity characteristics are reflected in figure \ref{v_total}. While the deliberative architecture appears to maintain its constant velocity profile and respective drop off at 2.54 cm, the reactive architecture's total velocity resembles a noisy exponential decay curve as the satellite moves in from its initial displacement. As previously seen in the reactive's x-velocity profile, the system exhibits periodic large velocity spikes, with a final velocity surge when the system is approximately 2.54 cm from target. 
+
+These results essentially reinforce the aforementioned claim that the reactive method does not take fuel efficiency into consideration when it computes its delta v burns. In order to compensate for the reactive method's position error, large correction burns are performed to redirect the satellite, and ultimately sacrifices the system's fuel efficiency in order to prevent a target collision. Therefore, while the reactive method is slightly faster to implement computationally, the deliberative method proves to have an increase in both overall performance and efficiency, and is thus the optimal choice for this simulation. 
+
+
+
 
 \section{Summary}
 
