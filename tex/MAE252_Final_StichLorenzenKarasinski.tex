@@ -321,7 +321,7 @@ where $T_i$ is the thrust calculated by behavior $i$, $w_i$ is the weight of the
 
 
 \section{Simulation Results and Discussion} \label{discuss}
-A complete simulation was conducted using an initial condition state vector such that the initial x displacement was equal to 100, 300, or 500 inches; the initial y and z displacements were equal to 0, +/- 50, or +/- 37 inches; and the initial velocities were all equal to zero. All initial condition test combinations were simulated, creating a total of 27 different initial condition state vectors. The deliberative and reactive architecture algorithms were independently simulated for both the laser range finder and the computer vision sensors, and 10 trials were simulated for each initial condition state vector. A total of 1080 trial runs were conducted to test which sensor and architecture method achieved an optimal efficiency in fuel usage, time to completion, or both. Refer to Tables \ref{mean} and \ref{std_dev} for the mean value and standard deviations for the satellite's time to completion, the total delta v used, the radial distance from the docking port, and the ``rate,'' or total velocity, of the satellite when it reaches the docking port. Additionally, refer to Table \ref{initial} for the mean fuel usage for an initial state vector with zero initial y and z offsets. 
+A complete simulation was conducted using an initial condition state vector such that the initial x displacement was equal to 254, 762, or 1270 cm; the initial y and z displacements were equal to 0, +/- 127, or +/- 93.98 cm; and the initial velocities were all equal to zero. All initial condition test combinations were simulated, creating a total of 27 different initial condition state vectors. The deliberative and reactive architecture algorithms were independently simulated for both the laser range finder and the computer vision sensors, and 10 trials were simulated for each initial condition state vector. A total of 1620 trial runs were conducted to test which sensor and architecture method achieved an optimal efficiency in fuel usage, time to completion, or both. Refer to Tables \ref{mean} and \ref{std_dev} for the mean value and standard deviations for the satellite's time to completion, the total delta v used, the radial distance from the docking port, and the ``rate,'' or total velocity, of the satellite when it reached the docking port. Additionally, refer to Table \ref{initial} for the mean and standard deviation for fuel usage given an initial state vector with zero y and z offsets. 
 
 
 % Mean table
@@ -334,11 +334,12 @@ A complete simulation was conducted using an initial condition state vector such
 Architecture & Sensor & Time (s) & Fuel (cm/s) & Distance (cm) & Rate (cm/s) \\
 \midrule
 Deliberative & cv & 353.307037  & 6.318384 & 0.001898 & 0.350590\\
-			& laser (noise) & 353.557407   & 9.219628 & 0.001824 & 0.351206\\
 			& laser (exact) & 353.503704 & 10.124424 & 0.001811 & 0.356138\\
+			& laser (noisy) & 353.557407   & 9.219628 & 0.001824 & 0.351206\\
 Reactive & cv & 371.858889  & 161.473580 & 0.303015 & 0.132178\\
-& laser (noise) &  363.357407 & 277.725357 & 0.032213 & 0.410119 \\
 & laser (exact) & 364.675926 & 49.945871 & 0.141140 & 0.127627\\
+& laser (noisy) &  363.357407 & 277.725357 & 0.032213 & 0.410119 \\
+
 \bottomrule
 \end{tabular}
 \label{mean}
@@ -354,24 +355,70 @@ Reactive & cv & 371.858889  & 161.473580 & 0.303015 & 0.132178\\
 Architecture & Sensor & Time (s) & Fuel (cm/s) & Distance (cm) & Rate (cm/s)\\
 \midrule
 Deliberative & cv & 166.281398 &  1.455229 & 0.001860 & 0.429374\\
-			& laser (noise) & 166.462108 &  3.635545 & 0.002010 & 0.415513\\
-& laser (exact) & 166.424436 & 4.650075 & 0.001864 & 0.412567\\			
+			& laser (exact) & 166.424436 & 4.650075 & 0.001864 & 0.412567\\			
+& laser (noisy) & 166.462108 &  3.635545 & 0.002010 & 0.415513\\
 Reactive & cv & 167.096079 & 72.930148 & 0.125167 & 0.079502\\
-& laser (noise) & 167.138923 & 130.190847 & 0.016381 & 0.209043 \\
 & laser (exact) & 167.232888 & 38.174648 & 0.043787 & 0.011663 \\
+& laser (noisy) & 167.138923 & 130.190847 & 0.016381 & 0.209043 \\
 \bottomrule
 \end{tabular}
 \label{std_dev}
 \end{table*}
 
  
-\begin{figure}
+
+
+\subsection{Deliberative Architecture: Computer Vision vs. Laser Range Finder}
+
+The deliberative algorithm was simulated for a total of 810 trials, and the means and standard deviations of its results were organized into Tables \ref{mean} and \ref{std_dev}, respectively. As seen in these tables, the computer vision (cv) and both laser range finder sensors (exact and noisy) had an average run time of approximately 353 seconds, with a standard deviation of about 166 seconds. For both time statistics, the cv was faster by approximately 0.02 seconds -- a slight difference that could essentially be attributed to calculation errors, and is thus too small to accurately distinguish which sensor performed with better time efficiency using the deliberative method. 
+
+Next, to determine which sensor was able to successfully dock the satellite, the final distance between the satellite and the docking port was measured. This distance should essentially go to zero, and as seen in Table \ref{mean}, all sensors successfully attained a small docking distance of approximately 0.0018 cm at an estimated rate of 0.35 cm/s. However, while the distribution of these three satellite-to-port distances is roughly equal to $8.7e-5$cm, the exact and noisy lasers had a greater mean fuel usage by about 4 cm/s and 3 cm/s, respectively, in comparison to the cv sensor. Furthermore both lasers' total fuel usage had a standard deviation equal to about 4.65 cm/s and 3.63 cm/s, whereas the computer vision had a standard deviation equal to about 1.46 cm/s, indicating the laser's fuel usage had a greater variance. These significant differences suggest that the computer vision sensor conducted more efficient delta v burns in comparison to the laser range finder sensor. Additionally, it is important to note that the noisy laser had a better fuel efficiency than the exact laser sensor -- an unexpected result seeing as the exact laser was simulated without added noise error, and thus mimics a ``perfect'' sensor. 
+
+ \begin{figure}
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figures/SensorErrors.pdf}
 \caption{Sensor Errors}
 \label{error}
 \end{center}
 \end{figure}
+
+% fuel usage for initial offsets
+\begin{table*}
+\centering
+\normalsize
+\caption{Fuel Usage for a Subset of Simulation Trials}
+\begin{tabular}{lllllll}
+\toprule
+Architecture & Sensor & x(cm) & y(cm) & z(cm) & Mean Fuel(cm/s) & Std. Dev Fuel (cm/s)\\
+\midrule
+Deliberative & cv & 254 &  0 & 0 & 5.873499 & 0.375036\\
+& & 762 &  0 & 0 &  6.272073 & 0.434431\\
+& & 1270 & 0 & 0 &  6.617597 &0.400670\\
+			& laser (exact) & 254 & 0 & 0 &    5.810814 &0.399440\\
+			& & 762 & 0 & 0 &    6.379098 &0.373520\\
+			& & 1270 & 0 & 0 & 7.058843 & 0.484380\\
+			& laser (noisy) & 254 & 0 & 0 &    5.780540 &0.383680\\
+			& & 762 & 0 & 0 &    6.346101 &0.336987\\
+			& & 1270 & 0 & 0 & 7.113471 &0.416979\\
+\cmidrule(lr) {1-7}
+Reactive & cv & 254 & 0 & 0 &   66.394292 &5.097201\\
+& & 762 & 0 & 0 &   76.760390 & 4.843838\\
+& & 1270 & 0 & 0 & 85.431635 &12.143697\\
+& laser (exact) & 254 & 0 & 0 &   8.475532 & 0.060457\\
+& & 762 & 0 & 0  &  15.361138 &0.104953\\
+& & 1270 & 0 & 0 & 22.956919 & 0.235527\\
+& laser (noisy) & 254 & 0 & 0 &  49.102620 & 2.463416\\
+& & 762 & 0 & 0  &  58.001444 &2.857584\\
+& & 1270 & 0 & 0 & 65.3067299 &2.863291\\
+\bottomrule
+\end{tabular}
+\label{initial}
+\end{table*}
+
+To examine the mean fuel usage as a function of distance, Table \ref{initial} shows the mean fuel usage for both sensors when the only non-zero initial condition was the displacement along the x-direction. As the satellite is initially displaced farther from the target, the average total fuel consumption subsequently increases, and the difference between the cv's and the laser's fuel efficiency begins to increase as a function of distance. For example, when the satellite has a small initial displacement equal to 254 cm, the noisy laser sensor has the best performance with an average total burn rate of about 5.78 cm/s, followed by the exact laser sensor at 5.81 cm/s, and then finally the cv sensor with a burn rate of 5.87 cm/s. However, as the initial displacement between the satellite and the target increases to 762 cm, the ``most efficient'' sensor switches from the noisy laser range finder to the computer vision sensor, with an increased performance by about 0.074 cm/s. Then for the furthest offset of 1270 cm, this difference in fuel efficiency between the cv and noisy laser sensor increases by almost a factor of ten to 0.496 cm/s. Despite this distribution increase, the overall magnitude of this distribution was small, and essentially all three sensors had a comparable performance for this given set of initial conditions. 
+
+The main reason why the efficient sensor switches from the noisy laser range finder to the computer vision sensor is directly related to noise. When utilizing a computer vision sensor, an innate amount of natural error exists from computing image gradients and conducting Canny edge detection algorithms. Since computer vision has a substantial amount of preexisting noise, no additional noise was added to these measurements. However, since noise was only systematically added to the laser's position estimations, there exists a noticeable difference between the amount of error in the noisy laser's calculations as compared to those attained through computer vision. As seen in Figure \ref{error}, the laser's error has a canonical shape, where the cone has a larger error distribution the farther the satellite is displaced from the docking port. In comparison, the computer vision has a more refined error boundary region, exhibiting a slight sinusoidal behavior as the satellite is displaced closer to the target. Since the laser sensor has a larger error boundary, it is logical to conclude that this larger error was propagated, and created a higher fuel consumption from conducting a greater number of correction burns. To determine whether a reduction in added laser error would lead to a more optimal performance, an exact laser sensor was simulated. As discussed above, this exact laser surprisingly had the least efficient mean fuel usage for all time trials, and only performed the second best for a subset of trials in Table \ref{initial}. This suggests that the exact laser sensor's numerical computation errors, such as floating point round-off or truncation, were still above the cv's error threshold, and essentially allowed the computer vision to perform the best.
+
 
 \begin{figure}[tb]
 \begin{center}
@@ -404,58 +451,15 @@ Reactive & cv & 167.096079 & 72.930148 & 0.125167 & 0.079502\\
 \label{noisy_total}
 \end{center}
 \end{figure}
-
-\subsection{Deliberative Architecture: Computer Vision vs. Laser Range Finder}
-
-The deliberative algorithm was simulated for a total of 540 trials, and the means and standard deviations of its results were organized into Tables \ref{mean} and \ref{std_dev}, respectively. As seen in these tables, the computer vision (cv) and laser range finder sensors each had an average run time of approximately 353 seconds, with a standard deviation of about 166 seconds. For both time statistics, the cv was faster by approximately 0.02 seconds -- a slight difference that could essentially be attributed to calculation errors, and is thus too small to accurately distinguish which sensor performed with better time efficiency using the deliberative method. 
-
-Next, to determine which sensor was able to successfully dock the satellite, the final distance between the satellite and the docking port was measured. This distance should essentially go to zero, meaning the laser sensor had a slightly better performance by attaining a final distance of 0.001824 cm at a rate of 0.351 cm/s, as opposed to the cv's final distance of 0.001898 cm at a rate of 0.350 cm/s. However, while the difference between these two satellite-to-port distances is approximately equal to $7.4e-5$cm, the laser had a greater average total fuel usage by about 3 cm/s in comparison to the cv sensor. Furthermore the laser's total fuel usage had a standard deviation equal to about 3.63 cm/s, whereas the computer vision had a standard deviation equal to about 1.46 cm/s, indicating the laser's fuel usage had a greater variance. These significant differences suggest that the computer vision sensor conducted more efficient delta v burns in comparison to the laser range finder sensor. 
-
- 
-% fuel usage for initial offsets
-\begin{table*}
-\centering
-\normalsize
-\caption{Fuel Usage for a Subset of Simulation Trials}
-\begin{tabular}{lllllll}
-\toprule
-Architecture & Sensor & x(cm) & y(cm) & z(cm) & Mean Fuel(cm/s) & Std. Dev Fuel (cm/s)\\
-\midrule
-Deliberative & cv & 254 &  0 & 0 & 5.873499 & 0.375036\\
-& & 762 &  0 & 0 &  6.272073 & 0.434431\\
-& & 1270 & 0 & 0 &  6.617597 &0.400670\\
-			& laser (exact) & 254 & 0 & 0 &    5.810814 &0.399440\\
-			& & 762 & 0 & 0 &    6.379098 &0.373520\\
-			& & 1270 & 0 & 0 & 7.058843 & 0.484380\\
-			& laser (noise) & 254 & 0 & 0 &    5.780540 &0.383680\\
-			& & 762 & 0 & 0 &    6.346101 &0.336987\\
-			& & 1270 & 0 & 0 & 7.113471 &0.416979\\
-\cmidrule(lr) {1-7}
-Reactive & cv & 254 & 0 & 0 &   66.394292 &5.097201\\
-& & 762 & 0 & 0 &   76.760390 & 4.843838\\
-& & 1270 & 0 & 0 & 85.431635 &12.143697\\
-& laser (exact) & 254 & 0 & 0 &   8.475532 & 0.060457\\
-& & 762 & 0 & 0  &  15.361138 &0.104953\\
-& & 1270 & 0 & 0 & 22.956919 & 0.235527\\
-& laser (noise) & 254 & 0 & 0 &  49.102620 & 2.463416\\
-& & 762 & 0 & 0  &  58.001444 &2.857584\\
-& & 1270 & 0 & 0 & 65.3067299 &2.863291\\
-\bottomrule
-\end{tabular}
-\label{initial}
-\end{table*}
-
-To examine the mean fuel usage as a function of distance, Table \ref{initial} shows the mean fuel usage for both sensors when the only non-zero initial condition was the displacement in the x-direction. As the satellite is initially displaced farther from the target, the average total fuel consumption subsequently increases, and the difference between the cv's and the laser's fuel efficiency begins to increase as a function of distance. For example, when the satellite has a small initial displacement equal to 254 cm, the laser sensor had a better performance with an average total burn rate of about 2.276 cm/s compared to the cv sensor burn rate of approximately 2.312 cm/s. However, as the initial displacement between the satellite and the target increases to 762 cm, the ``more efficient'' sensor switches from the laser range finder to the computer vision sensor, with a better performance by about 0.029 cm/s. Then for the farthest offset of 1270 cm, this difference in fuel efficiency between the cv and laser sensor increases by almost a factor of ten to approximately 0.195 cm/s. 
-
-The main reason why the efficient sensor switches from the laser range finder to the computer vision sensor is because noise was added to the laser's position estimates as a function of distance, whereas no additional noise was added to the computer vision measurements. When utilizing a computer vision sensor, an innate amount of natural error exists from computing image gradients and conducting Canny edge detection algorithms. Since computer vision has a substantial amount of preexisting noise, no additional noise was added to these measurements. However, since noise was only systematically added to the laser's position estimations, there exists a noticeable difference between the amount of error in the laser's calculations as compared to the computer vision's calculations. As seen in Figure \ref{error}, the laser's error has a canonical shape, where the cone has a larger error distribution the farther the satellite is displaced from the docking port. In comparison, the computer vision has a more refined error boundary region, exhibiting a slight sinusoidal behavior as the satellite is displaced closer to the target. Since the laser sensor has a larger error boundary, it is logical to conclude that this large error was then propagated, and ultimately created a larger fuel consumption, as it is likely that the simulation conducted a greater number of correction burns to compensate for the error in the satellite's estimated position. If the amount of added laser sensor error was reduced, the laser range finder would have a smaller error boundary, and its overall performance and fuel efficiency would likely be increased. This reduced error could then effect which sensor proved to have a greater fuel efficiency, and since there is a lower limit on the cv's error, if the reduced error is smaller than this limit, the laser range finder would most likely become the fuel efficient sensor for all simulated initial x-displacements.
-
 \subsection{Reactive Architecture: Computer Vision vs. Laser Range Finder}
 
 \subsection{Deliberative vs. Reactive Architecture}
 
-As seen in Tables \ref{mean} through \ref{initial}, the deliberative algorithm exhibits greater efficiency than the reactive algorithm for both the laser range finder and the computer vision sensors. For the average time to completion, the reactive algorithm exceeds the deliberative method's time by about 10 and 18 seconds for the laser and cv sensors, respectively. However, its standard deviation differs from the deliberative method's standard deviation by less than one second, indicating that significant outliers were not responsible for increasing the average time to completion. As a result of this longer flight time, the reactive method exhibits a significant loss in fuel efficiency. This inefficiency can be seen in Table \ref{mean} where the reactive method utilizes an average total fuel of approximately 161.474 cm/s for a laser range finder sensor -- almost 27 times larger than the deliberative's comparable average fuel use of 6.318 cm/s. Furthermore, despite the reactive method's higher average fuel usage, the reactive method guides the satellite to an average final displacement that is 0.303 cm and 0.032 cm away from the target using the cv and laser sensors, respectively. These final displacements have a significant amount of error when compared to the small average displacements of 0.0018 cm for both deliberative sensors, reinforcing the final conclusion that the deliberative method exhibited greater time and fuel efficiency.
+As seen in Tables \ref{mean} through \ref{initial}, the deliberative algorithm exhibits greater efficiency than the reactive algorithm for both the laser range finder and the computer vision sensors. For the average time to completion, the reactive algorithm exceeds the deliberative method's time by about 10 and 18 seconds for the laser (noisy and exact) and cv sensors, respectively. However, its standard deviation differs from the deliberative method's standard deviation by less than one second, indicating that significant outliers were not responsible for increasing the average time to completion. As a result of this longer flight time, the reactive method exhibits a significant loss in fuel efficiency. This inefficiency can be seen in Table \ref{mean} where the exact laser is the best performing sensor under the reactive method, utilizing an average total fuel of approximately 49.946 cm/s -- almost 5 times larger than the deliberative's comparable average fuel use of 10.124 cm/s. Furthermore, despite the reactive method's higher average fuel usage, the reactive method guides the satellite to an average final displacement that varies between 0.303 cm and 0.032 cm away from the target using the cv and laser sensors, respectively. These final displacements have a significant amount of error when compared to the small average displacements of 0.0018 cm for both deliberative sensors, reinforcing the final conclusion that the deliberative method exhibited greater time and fuel efficiency.
 
-To compare the two architecture methods for a single trial run, refer to figures \ref{velocity} and \ref{v_total} where the system has an initial displacement of 254 cm, 127 cm, and 93.98 cm in the x, y, and z directions, respectively. As seen in Figure \ref{velocity}, the deliberative x-velocity profile maintains a relatively constant velocity of 1.27 cm/s as the satellite moves towards the docking port. When the satellite is approximately 2.54 cm from the target, the delta v burn goes to zero, and the satellite drifts into its final 0.0018 cm displacement. In comparison, the reactive x-velocity profile exhibits a dynamic response, with large velocity spikes for the first 50 cm traveled along the x-direction. As the system continues to move closer, large velocity spikes occur intermittently for approximately every 50 cm between the 203 cm and 100 cm displacement points. Once the satellite reaches approximately 75 cm from the docking port, large delta v burns along the x-direction increase in frequency, with a final velocity spike at approximately 2.54 cm from target. If the total velocity profiles for each architecture is closely examined, the constant deliberative and the dynamic reactive velocity characteristics are reflected in figure \ref{v_total}. While the deliberative architecture appears to maintain its constant velocity profile and respective drop off at 2.54 cm, the reactive architecture's total velocity resembles a noisy exponential decay curve as the satellite moves in from its initial displacement. As previously seen in the reactive's x-velocity profile, the system exhibits periodic large velocity spikes, with a final velocity surge when the system is approximately 2.54 cm from target. 
+To compare the two architecture methods for a single trial run, refer to figures \ref{xClean_velocity}, \ref{xNoise_velocity}, \ref{clean_total} and \ref{noisy_total} where the system has an initial displacement of 254 cm, 127 cm, and 93.98 cm in the x, y, and z directions, respectively. As seen in Figures \ref{xClean_velocity} and \ref{xNoise_velocity}, the deliberative x-velocity profile maintains a relatively constant velocity of 1.27 cm/s as the satellite moves towards the docking port. When the satellite is approximately 2.54 cm from the target, the delta v burn goes to zero, and the satellite drifts into its final 0.0018 cm displacement. In comparison, the reactive x-velocity profile exhibits a dynamic response, with large velocity spikes under the noisy laser for the first 50 cm traveled along the x-direction. As the system continues to move closer, large velocity spikes occur intermittently for approximately every 50 cm between the 203 cm and 100 cm displacement points. Once the satellite reaches approximately 75 cm from the docking port, large delta v burns along the x-direction increase in frequency, with a final velocity spike at approximately 2.54 cm from target. As expected, the exact laser's x-velocity profile is a smoothed version of the noisy laser, omitting the large spikes in velocity since there was no added noise to the system. 
+
+If the total velocity profiles for each architecture is closely examined, the constant deliberative and the dynamic reactive velocity characteristics are reflected in figures \ref{clean_total} and \ref{noisy_total}. While the deliberative architecture appears to maintain its constant velocity profile and respective drop off at 2.54 cm, the reactive architecture's total velocity resembles a smooth and noisy exponential decay curve as the satellite moves in from its initial displacement under the exact and noisy lasers, respectively. As previously seen in the reactive's x-velocity profile, the system exhibits periodic large velocity spikes under the noisy laser, with a final velocity surge when the system is approximately 2.54 cm from target. 
 
 These results essentially reinforce the aforementioned claim that the reactive method does not take fuel efficiency into consideration when it computes its delta v burns. In order to compensate for the reactive method's position error, large correction burns are performed to redirect the satellite, and ultimately sacrifices the system's fuel efficiency in order to prevent a target collision. Therefore, while the reactive method is slightly faster to implement computationally, the deliberative method proves to have an increase in both overall performance and efficiency, and is thus the optimal choice for this simulation. 
 
