@@ -14,7 +14,7 @@ class Satellite(object):
 
     ''' Our base class to hold non-architecture operations. '''
 
-    def __init__(self, state, target_state, target, sensor):
+    def __init__(self, state, target_state, target, sensor, laser_error=0.1):
         # Unpack input vectors
         x0, y0, z0, dx0, dy0, dz0 = state
         xf, yf, zf, dxf, dyf, dzf = target_state
@@ -23,7 +23,7 @@ class Satellite(object):
         self.n = 0.0011596575
         self.t = 0.
         self.fuel = 0.
-        self.laser_error = 0.1
+        self.laser_error = laser_error
         self.minimum_thrust = 0.01
         self.dt = 0.1
         self.name = 'Satellite'
@@ -166,9 +166,9 @@ class Satellite(object):
 class ReactiveSatellite(Satellite):
     ''' A reactive satellite architecture. '''
 
-    def __init__(self, state, target_state, target, sensor):
+    def __init__(self, state, target_state, target, sensor, laser_error=0.1):
         # Additional properties
-        Satellite.__init__(self, state, target_state, target, sensor)
+        Satellite.__init__(self, state, target_state, target, sensor, laser_error)
 
         # Set type
         self.name = 'Reactive'
@@ -280,9 +280,9 @@ class DeliberativeSatellite(Satellite):
 
     ''' A deliberative satellite architecture. '''
 
-    def __init__(self, state, target_state, target, sensor):
+    def __init__(self, state, target_state, target, sensor, laser_error=0.1):
         # Call Satellite init method
-        Satellite.__init__(self, state, target_state, target, sensor)
+        Satellite.__init__(self, state, target_state, target, sensor, laser_error)
 
         # Set type
         self.name = 'Deliberative'

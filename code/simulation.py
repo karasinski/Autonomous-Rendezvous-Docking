@@ -72,6 +72,37 @@ def RunSimulation(name, sensor):
 
     return output
 
+
+def FullOutput(name, sensor, laser_error=0.1):
+    for initial_state in initial_conditions:
+        f = open(name + sensor + str(laser_error) + str(initial_state), 'w')
+        print(initial_state)
+
+        # Initialize Inspector
+        if name is "Deliberative":
+            Inspector = DeliberativeSatellite(initial_state, target_state, target, sensor, laser_error=laser_error)
+        elif name is "Reactive":
+            Inspector = ReactiveSatellite(initial_state, target_state, target, sensor, laser_error=laser_error)
+        else:
+            raise TypeError
+
+        # Set the camera position to be equal to the Inspector position, sync
+        # with server
+        number_of_time_steps = 100000
+        for time_step in range(number_of_time_steps):
+            # Step the inspector
+            Inspector.step()
+
+            # Update the camera
+            cam_position = update_camera_position(Inspector.state[0:3])
+            CAM.position = cam_position
+            dc.client()
+            np.savetxt(f, np.concatenate([Inspector.state, Inspector.estimated_state]))
+
+            # Test if docked
+            if Inspector.docked():
+                break
+
 # Connect to EDGE
 dc.connect()
 dc.client()
@@ -84,15 +115,29 @@ target = dc.Node("VR_PMA2_AXIAL_TARGET")
 initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 200)
                                             for y in range(-50,  51,  50)
                                             for z in range(-37,  38,  37)]
-# initial_conditions = [[50., 10., -7., 0, 0, 0], [70., 10., 0., 0, 0, 0]]
 target_state = [5., 0., 0., 0., 0., 0.]
 
-r_laser = RunSimulation("Reactive", "laser")
-d_laser = RunSimulation("Deliberative", "laser")
+# Run 10x each initial condition for each sensor
+# r_laser = RunSimulation("Reactive", "laser")
+# d_laser = RunSimulation("Deliberative", "laser")
 
-r_cv = RunSimulation("Reactive", "cv")
-d_cv = RunSimulation("Deliberative", "cv")
+# r_cv = RunSimulation("Reactive", "cv")
+# d_cv = RunSimulation("Deliberative", "cv")
 
-d = pd.concat((d_laser, d_cv, r_laser, r_cv), axis=1)
-d = d.T
-d.to_csv('output')
+# d = pd.concat((d_laser, d_cv, r_laser, r_cv), axis=1)
+# d = d.T
+# d.to_csv('output')
+
+# Log all data for 1 trial of 1 initial condition for each sensor
+# initial_conditions = [[100., 50., 37., 0., 0., 0.]]
+# FullOutput("Reactive", "laser", laser_error=0.)
+# FullOutput("Deliberative", "laser", laser_error=0.)
+
+# FullOutput("Reactive", "laser")
+# FullOutput("Deliberative", "laser")
+
+# FullOutput("Reactive", "cv")
+# FullOutput("Deliberative", "cv")
+
+# l = np.loadtxt('Deliberativelaser[100, 0, 0, 0.0, 0.0, 0.0]')
+# l = l.reshape(len(l)/12, 12)
