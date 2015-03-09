@@ -24,7 +24,7 @@ class Satellite(object):
         self.t = 0.
         self.fuel = 0.
         self.laser_error = laser_error
-        self.minimum_thrust = 0.01
+        self.minimum_thrust = 1E-4
         self.dt = 0.1
         self.name = 'Satellite'
         self.sensor = sensor
@@ -43,13 +43,14 @@ class Satellite(object):
         ''' Define distance and velocity for successful capture '''
 
         close_enough = 0.5  # cm
-        low_velocity = 0.5  # cm/s
+        # low_velocity = 0.5  # cm/s
 
         distance_offset = np.sum(np.abs(self.state[0:3] - self.target_state[0:3]))
-        relative_velocity = np.sum(np.abs(self.state[3:6] - self.target_state[3:6]))
+        # relative_velocity = np.sum(np.abs(self.state[3:6] - self.target_state[3:6]))
 
         # print(distance_offset, relative_velocity)
-        return distance_offset < close_enough and relative_velocity < low_velocity
+        # return distance_offset < close_enough and relative_velocity < low_velocity
+        return distance_offset < close_enough
 
     def ClohessyWiltshire(self, t):
         '''Clohessy-Wiltshire equations'''

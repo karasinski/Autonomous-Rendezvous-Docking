@@ -112,17 +112,24 @@ CAM = dc.Node("CM_Cam")
 target = dc.Node("VR_PMA2_AXIAL_TARGET")
 
 # Inspector initial and final targets
-initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 200)
-                                            for y in range(-50,  51,  50)
-                                            for z in range(-37,  38,  37)]
+# initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 200)
+#                                             for y in range(-50,  51,  50)
+#                                             for z in range(-37,  38,  37)]
+initial_conditions = [[100.,  0.,  0., 0., 0., 0.],
+                      [100., 50., 37., 0., 0., 0.],
+                      [300.,  0.,  0., 0., 0., 0.],
+                      [300., 50., 37., 0., 0., 0.],
+                      [500.,  0.,  0., 0., 0., 0.],
+                      [500., 50., 37., 0., 0., 0.]]
+
 target_state = [5., 0., 0., 0., 0., 0.]
 
 # Run 10x each initial condition for each sensor
 # r_laser = RunSimulation("Reactive", "laser")
 # d_laser = RunSimulation("Deliberative", "laser")
 
-# r_cv = RunSimulation("Reactive", "cv")
-# d_cv = RunSimulation("Deliberative", "cv")
+r_cv = RunSimulation("Reactive", "cv")
+d_cv = RunSimulation("Deliberative", "cv")
 
 # d = pd.concat((d_laser, d_cv, r_laser, r_cv), axis=1)
 # d = d.T
