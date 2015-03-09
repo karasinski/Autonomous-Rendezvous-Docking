@@ -19,31 +19,35 @@ def update_camera_position(inspector_position):
     return cam_position
 
 
-def RunSimulation(name, sensor):
+def RunSimulation(name, sensor, laser_error=0):
     output = pd.Series()
     for initial_state in initial_conditions:
         print(initial_state)
 
         # Run the simulation many times
-        number_of_simulations = 10
+        number_of_simulations = 100
         trial = pd.Series()
         trial['x'] = initial_state[0]
         trial['y'] = initial_state[1]
         trial['z'] = initial_state[2]
         trial['type'] = name
-        trial['sensor'] = sensor
+        if laser_error == 0:
+            trial['sensor'] = 'exact'
+        else:
+            trial['sensor'] = sensor
 
         for _ in range(number_of_simulations):
             # Initialize Inspector
+
             if name is "Deliberative":
-                Inspector = DeliberativeSatellite(initial_state, target_state, target, sensor)
+                Inspector = DeliberativeSatellite(initial_state, target_state, target, sensor, laser_error=laser_error)
             elif name is "Reactive":
-                Inspector = ReactiveSatellite(initial_state, target_state, target, sensor)
+                Inspector = ReactiveSatellite(initial_state, target_state, target, sensor, laser_error=laser_error)
             else:
                 raise TypeError
 
-            # Set the camera position to be equal to the Inspector position, sync
-            # with server
+            # Set the camera position to be equal to the Inspector position,
+            # sync with server
             number_of_time_steps = 100000
             for time_step in range(number_of_time_steps):
                 # Step the inspector
@@ -110,11 +114,9 @@ dc.client()
 # Find nodes
 CAM = dc.Node("CM_Cam")
 target = dc.Node("VR_PMA2_AXIAL_TARGET")
+# target = None
 
 # Inspector initial and final targets
-# initial_conditions = [[x, y, z, 0., 0., 0.] for x in range(100, 501, 200)
-#                                             for y in range(-50,  51,  50)
-#                                             for z in range(-37,  38,  37)]
 initial_conditions = [[100.,  0.,  0., 0., 0., 0.],
                       [100., 50., 37., 0., 0., 0.],
                       [300.,  0.,  0., 0., 0., 0.],
@@ -125,8 +127,11 @@ initial_conditions = [[100.,  0.,  0., 0., 0., 0.],
 target_state = [5., 0., 0., 0., 0., 0.]
 
 # Run 10x each initial condition for each sensor
-# r_laser = RunSimulation("Reactive", "laser")
-# d_laser = RunSimulation("Deliberative", "laser")
+# r_laser = RunSimulation("Reactive", "laser", laser_error=0.1)
+# d_laser = RunSimulation("Deliberative", "laser", laser_error=0.1)
+
+# r_exact = RunSimulation("Reactive", "laser")
+# d_exact = RunSimulation("Deliberative", "laser")
 
 r_cv = RunSimulation("Reactive", "cv")
 d_cv = RunSimulation("Deliberative", "cv")

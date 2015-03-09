@@ -6,6 +6,28 @@ from numpy.linalg import solve
 from cv_tools import *
 
 
+class KalmanFilter(object):
+    def __init__(self, process_var, measurement_var):
+        self.process_var = process_var
+        self.measurement_var = measurement_var
+        self.posteri_est = None
+        self.posteri_error_est = 1.0
+
+    def update(self, measurement):
+        if self.posteri_est is None:
+            self.posteri_est = measurement
+
+        priori_est = self.posteri_est
+        priori_error_est = self.posteri_error_est + self.process_var
+
+        gain = priori_error_est / (priori_error_est + self.measurement_var)
+        self.posteri_est = priori_est + gain * (measurement - priori_est)
+        self.posteri_error_est = (1 - gain) * priori_error_est
+
+    def predict(self):
+        return self.posteri_est
+
+
 def gaussian(x, mu, sig):
     return np.exp(-np.power(x - mu, 2.) / 2 * np.power(sig, 2.))
 
@@ -29,6 +51,10 @@ class Satellite(object):
         self.name = 'Satellite'
         self.sensor = sensor
 
+        # Kalman Filter
+        Q, R = .032, 1.
+        self.kf = KalmanFilter(Q, R)
+
         # Set state, previous state, estimated state, and optimal velocity
         self.state = np.array([x0, y0, z0, dx0, dy0, dz0])
         self.previous_state = np.array([x0, y0, z0, dx0, dy0, dz0])
@@ -42,14 +68,9 @@ class Satellite(object):
     def docked(self):
         ''' Define distance and velocity for successful capture '''
 
-        close_enough = 0.5  # cm
-        # low_velocity = 0.5  # cm/s
+        close_enough = 0.5
 
         distance_offset = np.sum(np.abs(self.state[0:3] - self.target_state[0:3]))
-        # relative_velocity = np.sum(np.abs(self.state[3:6] - self.target_state[3:6]))
-
-        # print(distance_offset, relative_velocity)
-        # return distance_offset < close_enough and relative_velocity < low_velocity
         return distance_offset < close_enough
 
     def ClohessyWiltshire(self, t):
@@ -87,7 +108,10 @@ class Satellite(object):
         x *= np.random.uniform(1 - self.laser_error, 1 + self.laser_error)
         y *= np.random.uniform(1 - self.laser_error, 1 + self.laser_error)
         z *= np.random.uniform(1 - self.laser_error, 1 + self.laser_error)
-        self.estimated_state[0:3] = np.array([x, y, z])
+
+        # self.estimated_state[0:3] = np.array([x, y, z])
+        self.kf.update(np.array([x, y, z]))
+        self.estimated_state[0:3] = self.kf.predict()
 
     def cv_sense(self):
         ''' Try to use CV or fallback to linear guess. '''
@@ -108,7 +132,9 @@ class Satellite(object):
             state = self.previous_state[0:3] + self.dt * self.previous_state[3:6]
             # print('guess')
 
-        self.estimated_state[0:3] = np.array(state)
+        # self.estimated_state[0:3] = np.array(state)
+        self.kf.update(np.array(state))
+        self.estimated_state[0:3] = self.kf.predict()
 
     def thrusters(self):
         ''' Try to fire thrusters at optimal rate, or do our best. '''
