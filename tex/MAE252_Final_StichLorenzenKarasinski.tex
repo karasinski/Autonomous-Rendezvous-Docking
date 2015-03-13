@@ -319,7 +319,14 @@ x += np.random.uniform(-error, error)
 x *= np.random.uniform(1 - error, 1 + error)
 \end{verbatim}
 
-\subsubsection{Thrusters}
+\subsection{Thrusters}
+There are techniques two implemented to increase the fidelity of the system in both model accuracy and system performance.
+
+The first step is to filter the burns to make sure that no minute burns are performed.  Real thrusters are capable of a minimum thrust output therefore this will make the simulation more representative of the physical system.  This will also have effects seen in fuel usage.  Constant minor burns or oscillations around the target could occur if these less than minimum burns were performed.
+
+The second step is to add error to the thrusters.  The thrusters are still considered ideal in their application of the thrust along the axis, however the magnitude is less than ideal.  The craft is assumed to have a perfect constant attitude allowing thrusters to only perform burns that cause translation without cross coupling between thrusters.  Once the requested delta V is passed through the cuttoff filter to eliminate unnecessarily small burns, it has a small error added.  This error causes a burn that is slightly more or slightly less that the requested value.  This will result in imperfections even while using perfect sensors and a deliberative model with complete knowledge of system dynamics.  This will allow us to see how the two architectures are able to handle these changing conditions and possibly how robust the system will be when applied to a physical testbed.
+
+\subsection{Kalman Filter}
 
 
 \section{Robotic Architectures}
@@ -396,7 +403,9 @@ w = (z_{target}-z)^2+|z_{target}-z|
 As with the deliberative architecture, the algorithm will continue until the target is reached.
 
 \section{Simulation Results and Discussion} \label{discuss}
-A complete simulation was conducted using an initial condition state vector such that the initial x displacement was equal to 254, 762, or 1270 cm; the initial y and z displacements were equal to 0, +/- 127, or +/- 93.98 cm; and the initial velocities were all equal to zero. All initial condition test combinations were simulated, creating a total of 27 different initial condition state vectors. The deliberative and reactive architecture algorithms were independently simulated for both the laser range finder and the computer vision sensors, and 10 trials were simulated for each initial condition state vector. A total of 1620 trial runs were conducted to test which sensor and architecture method achieved an optimal efficiency in fuel usage, time to completion, or both. Refer to Tables \ref{mean} and \ref{res_comparisons} for the mean value and standard deviations for the satellite's time to completion, the total $\Delta V$ used, the radial distance from the docking port, and the ``rate,'' or total velocity, of the satellite when it reached the docking port. It is important to note that an acceptable docking rate is 3.00 cm/s -- a rate that is approximately 10 times larger than the docking rates attained through this simulation. Additionally, refer to Table \ref{initial} for the mean and standard deviation for fuel usage given an initial state vector with zero y and z offsets.
+A complete simulation was conducted using an initial condition state vector such that the initial x displacement was equal to 254, 762, or 1270 cm; the initial y and z displacements were equal to 0, +/- 127, or +/- 94 cm; and the initial velocities were all equal to zero. All initial condition test combinations were simulated, creating a total of 27 different initial condition state vectors. The deliberative and reactive architecture algorithms were independently simulated for both the laser range finder and the computer vision sensors. Each sensor was simulated for both the unfiltered, as well as the Kalman filtered case, for each initial condition state vector, leading to a total of 200 trials per initial condition state vector. A total of 10,800 trial runs were conducted to test which sensor and architecture method achieved an optimal efficiency in fuel usage, time to completion, or both. These results were compared to an exact laser range finder simulation for each architecture, which served as the baseline for a ``perfect'' sensor. 
+
+Refer to Tables \ref{mean} for the mean value of 100 trials for a ``perfect'' laser sensor under the influence of noisy thrusters to see the satellite's time to completion and fuel usage for both architectures, given a small subset of the tested initial conditions. Additionally, refer to Table \ref{delib_comparisons} and \ref{react_comparisons} for the deliberative and reactive architecture results for the mean value results for 100 trials for both the filtered and unfiltered laser results and 10 trials for the CV sensors. Using the initial conditions with x, y, z offsets equal to 1270, 127, 94 cm, respectively, the results include the satellite's time to completion, the total $\Delta V$ used, the radial distance from the docking port, and the ``rate,'' or total velocity, of the satellite when it reached the docking port. Each architecture was compared to the exact laser sensor's results as a baseline comparison. It is important to note that an acceptable docking rate is 3.00 cm/s -- a rate that is approximately larger than all docking rates attained through this simulation. 
 
 % Mean table
 \begin{table*}
@@ -406,7 +415,7 @@ A complete simulation was conducted using an initial condition state vector such
 \begin{tabular}{r r r | r r | r r}
 \toprule
      &     &    &          & Deliberative &           & Reactive \\
-   x &   y & z  & Time (s) & Fuel (cm/s) &  Time (s) & Fuel (cm/s) \\
+   x (cm)& y (cm)& z (cm)& Time (s) & Fuel (cm/s) &  Time (s) & Fuel (cm/s) \\
 \midrule
 254  & 0   & 0  &  94.6 & 2.55 & 104.5 & 4.95 \\
      & 127 & 94 & 181.7 & 2.55 & 191.7 & 9.74 \\
@@ -422,17 +431,34 @@ A complete simulation was conducted using an initial condition state vector such
 \begin{table*}
 \centering
 \normalsize
-\caption{\label{res_comparisons}Results for both architectures and sensors, with and without Kalman filtering, for an initial conidtion of x, y, z = 1270, 127, 94 cm. Results are the mean values of 100 trials for the exact and laser sensors, and 10 trials for the CV sensors.}
-\begin{tabular}{r r | r r | r r}
+\caption{\label{delib_comparisons}Results for the deliberative architecture, for all sensors, with and without Kalman filtering, for an initial conidtion of x, y, z = 1270, 127, 94 cm. Results are the mean values of 100 trials for the exact and laser sensors, and 10 trials for the CV sensors.}
+\begin{tabular}{r r | r r r r }
 \toprule
-       &          &          & Deliberative &           & Reactive \\
-Sensor & Filter &  Time (s) & Fuel (cm/s) &  Time (s) &   Fuel (cm/s) \\
+Sensor & Filter & Time (s) & Fuel (cm/s) & Distance (cm) & Rate (cm/s)   \\
 \midrule
-Exact &   None & 581.6 & 2.58 & 591.7 &   9.42 \\
-Laser &   None & 581.6 & 2.74 & 591.5 & 396.00 \\
-Laser & Kalman & 581.6 & 2.59 & 590.0 &  50.54 \\
-   CV &   None & 581.6 & 2.65 & 599.6 & 116.65 \\
-   CV & Kalman & 581.6 & 2.60 & 592.7 &  26.44 \\
+ Exact &   None &    581.6 &        2.58 &          0.17 &        2.53   \\
+ Laser &   None &    581.6 &        2.74 &          0.15 &        2.53   \\
+ Laser & Kalman &    581.6 &        2.59 &          0.16 &        2.53   \\
+    CV &   None &    581.6 &        2.65 &          0.16 &        2.53   \\
+    CV & Kalman &    581.6 &        2.60 &          0.16 &        2.54   \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% Comparison Table
+\begin{table*}
+\centering
+\normalsize
+\caption{\label{react_comparisons}Results for the reactive architecture, for all sensors, with and without Kalman filtering, for an initial conidtion of x, y, z = 1270, 127, 94 cm. Results are the mean values of 100 trials for the exact and laser sensors, and 10 trials for the CV sensors.}
+\begin{tabular}{r r | r r r r }
+\toprule
+Sensor & Filter & Time (s) & Fuel (cm/s) & Distance (cm) & Rate (cm/s) \\
+\midrule
+ Exact &   None &    591.7 &        9.42 &          0.00 &        0.15 \\
+ Laser &   None &    591.5 &      396.00 &          0.02 &        0.43 \\
+ Laser & Kalman &    590.0 &       50.54 &          0.02 &        0.21 \\
+    CV &   None &    599.6 &      116.65 &          0.23 &        0.16 \\
+    CV & Kalman &    592.7 &       26.44 &          0.20 &        0.70 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -459,38 +485,6 @@ Next, to determine which sensor was able to successfully dock the satellite, the
 \end{center}
 \end{figure}
 
-% fuel usage for initial offsets
-\begin{table*}
-\centering
-\normalsize
-\caption{Fuel Usage for Trials Containing Zero Initial Y and Z Offsets}
-\begin{tabular}{lllll}
-\toprule
-Architecture & Sensor & x(cm) & Mean Fuel(cm/s) & Std. Dev Fuel (cm/s)\\
-\midrule
-Deliberative & CV & 254  & 5.87 & 0.37 \\
-                & & 762  & 6.27 & 0.43 \\
-                & & 1270 & 6.61 & 0.40 \\
-          & Exact & 254  & 5.81 & 0.39 \\
-                & & 762  & 6.37 & 0.37 \\
-                & & 1270 & 7.05 & 0.48 \\
-          & Laser & 254  & 5.78 & 0.38 \\
-                & & 762  & 6.34 & 0.33 \\
-                & & 1270 & 7.11 & 0.41 \\
-\cmidrule(lr) {1-5}
-Reactive & CV &     254  & 66.39 &  5.09\\
-                & & 762  & 76.76 &  4.84\\
-                & & 1270 & 85.43 & 12.14\\
-        & Exact   & 254  &  8.47 &  0.06\\
-                & & 762  & 15.36 &  0.10\\
-                & & 1270 & 22.95 &  0.23\\
-        & Laser   & 254  & 49.10 &  2.46\\
-                & & 762  & 58.00 &  2.85\\
-                & & 1270 & 65.30 &  2.86\\
-\bottomrule
-\end{tabular}
-\label{initial}
-\end{table*}
 
 To examine the mean fuel usage as a function of distance, Table \ref{initial} shows the mean fuel usage for both sensors when the only non-zero initial condition was the displacement along the x-direction. As the satellite is initially displaced farther from the target, the average total fuel consumption subsequently increases, and the difference between the CV's and the laser's fuel efficiency begins to increase as a function of distance. For example, when the satellite has a small initial displacement equal to 254 cm, the noisy laser sensor has the best performance with an average total burn rate of about 5.78 cm/s, followed by the exact laser sensor at 5.81 cm/s, and then finally the CV sensor with a burn rate of 5.87 cm/s. However, as the initial displacement between the satellite and the target increases to 762 cm, the ``most efficient'' sensor switches from the noisy laser range finder to the computer vision sensor, with an increased performance by about 0.074 cm/s. Then for the farthest offset of 1270 cm, the difference in fuel efficiency between the CV and noisy laser sensor increases by almost a factor of ten to 0.496 cm/s. Despite this distribution increase, the overall magnitude of this distribution was small, and essentially all three sensors had a comparable performance for this given set of initial conditions.
 
@@ -507,7 +501,7 @@ The main reason why the efficient sensor switches from the noisy laser range fin
 \begin{figure}[tb]
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figures/reactivelaservx.pdf}
-\caption{X-Velocity comparisons for a fltered and unfiltered Laser Sensor Trial }
+\caption{X-Velocity comparisons for a filtered and unfiltered Laser Sensor Trial using a Reactive Architecture }
 \label{xNoise_velocity}
 \end{center}
 \end{figure}
@@ -523,7 +517,7 @@ The main reason why the efficient sensor switches from the noisy laser range fin
 \begin{figure}[tb]
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figures/TotalVelocityNoisy.pdf}
-\caption{Total Velocity Profile for a Deliberative and a Reactive Exact Laser Time Trial }
+\caption{Total Velocity Profile for a Deliberative and a Reactive Noisy Laser Time Trial }
 \label{noisy_total}
 \end{center}
 \end{figure}
@@ -531,7 +525,13 @@ The main reason why the efficient sensor switches from the noisy laser range fin
 \subsection{Reactive Architecture: Computer Vision vs. Laser Range Finder}
 The reactive architecture's lack of a planning stage makes it much more sensitive to noisy measurements. When the exact state is used, the fuel usage is relatively low, at 8.47 cm/s for an initial state of x = 254 cm, and increases linearly with distance to a total fuel usage of 22.96 cm/s at x = 1270 cm. Once some noise is added to the laser sensor, the fuel usage goes up by about 40 cm/s, to 49.10 cm/s at x = 254 cm, and again increases at the same linear rate as before to 65.41 cm/s at 1270 cm. The CV sensor results in the largest total fuel usage for the reactive method as the CV error has the largest variance. The CV fuel usage goes up by another 15 cm/s, to 66.39 cm/s at x = 254 cm, and again linearly increasing, to 85.43 cm/s at 1270 cm. The standard deviations of all of these means also increases in the same order, first with an increase in distance, then with an increase in sensor error. For all of these values, the initial conditions for y and z offsets were set to 0 cm, refer to Table \ref{initial}.
 
-\textbf{Insert analysis paragraph}
+The specific effects of the computer vision and laser range finder on the behavior of the system is similar whether using a deliberative or a reactive architecture.  However, as mentioned before, the magnitudes of the effects are greater with increasing sensor error and distance to target.  There are several reasons to explain this.
+
+The first of which is directly tied to the distance from target and noise in the sensor error.  The algorithm for the reactive method calculates larger burns for larger distances.  This means that the error in the estimated distance will produce different results for the inspectors desired velocity therefor constant corrections are made to adjust the crafts velocity.  This effect is also true for any burn calculated, however the effect are greater with larger delta V burns.
+
+The second of which is inherent the way that the reactive algorithm calculates desired velocity.  This effect is independent of the sensor noise, but is magnified by the sensor noise.  In spaceflight the optimal burn scenario to change position or attitude is a bang-bang maneuver.  This is performed by two burns that are as short as possible.  One burn is done at the beginning of the maneuver while the other burn is performed at the end.  This results in a "constant" velocity profile (minus orbital effects).  We can see from figure \ref{clean_total}, the velocity profile is for a zero sensor error trial.  The velocity profile constantly changes which is far from the ideal profile.  This means that corrections are required for the craft to maintain a velocity profile that is far from ideal.
+
+There is also a contribution due to the programmed target path of the reactive architecture.  Since the reactive architecture has no global knowledge of system dynamics it simply tried to stay on the same orbit as the target craft.  Because of orbital dynamical, this means that if the craft was able to maintain its desired course perfectly, it would still have a very large fuel usage.  As the inspector burns towards the host, the orbital velocity of the inspector is increased.  This causes it to raise the radius of the orbit that it is on.  To maintain the orbit of the target craft, a burn is requested to compensate.  Higher delta V burns will magnify this effect.  Therefore this effect is also increased with distance to target.
 
 \subsection{Deliberative vs. Reactive Architecture}
 
@@ -555,11 +555,11 @@ There are two different areas of the system that can be vastly improved upon.  T
 
 The optimal way to combine the two sensors would be to use a Kalman filter to mitigate the error in the position error.  With better position estimates, the performance could be greatly improved.  Since the Sense method is the same for all architectures, the improvements will be seen with a deliberative, reactive, or hybrid control architecture.  More accurate position estimates will lead to smoother paths and increased efficiency. This may not improve accuracy in all cases, but will indeed give the best possible result for tested conditions.
 
-Since different aspects of the two controllers were tested, a single hybrid controller can be designed that will implement characteristics of the two architectures to gain the advantages of both methods.  For example, instead of trying to follow the orbital path of the host, an optimal path can be calculated using the same Clohessy-Wiltshire model used in the deliberative algorithm.  Once a hybrid controller algorithm is developed, it must be tested to see if any unforeseen disadvantages arise.
+Since different aspects of the two controllers were tested, a single hybrid controller can be designed that will implement characteristics of the two architectures to gain the advantages of both methods.  For example, instead of trying to follow the orbital path of the host, an optimal path can be calculated using the same Clohessy-Wiltshire model used in the deliberative algorithm.  Once a hybrid controller architecture is developed, it must be tested to see if any unforeseen disadvantages arise.
 
 Reactive sub-behaviors could be further split up to calculate burn weights for each axis individually.  This would fix such problems as path keeping burns being outweighed by the move closer behavior at large distances from the target.  Once the division of the axes is complete, the weighting equations would then be optimized.  A genetic algorithm can be implemented to test various combinations of weight amplitudes and equations.  Many simulations must be run at the various initial condition and noise levels to fully test each setting.
 
-With an optimized hybrid control architecture and Kalman filter to combine both laser range finder and computer vision measurements, physical trials could be performed.  Further optimization of both the Kalman filter and control architecture must be performed after the system is applied to a physical system to ensure that the optimal behavior is still achieved.
+With an optimized hybrid control architecture  physical trials could be performed.  Further optimization of both the Kalman filter and control architecture must be performed after the system is applied to a physical system to ensure that the optimal behavior is still achieved.
 
 \section{Notes}
 look back to modify the question \\
