@@ -21,7 +21,7 @@ def KalmanFilter(input_signal, Q=None, R=None):
     K = np.zeros(sz)          # gain or blending factor
 
     # Intial guesses
-    xhat[0] = 100.
+    xhat[0] = input_signal[0]
     P[0] = .0003
 
     for k in range(1, len(input_signal)):
