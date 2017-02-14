@@ -25,7 +25,7 @@ def RunSimulation(name, sensor, laser_error=0):
         print(initial_state)
 
         # Run the simulation many times
-        number_of_simulations = 100
+        number_of_simulations = 10
         trial = pd.Series()
         trial['x'] = initial_state[0]
         trial['y'] = initial_state[1]
@@ -133,15 +133,15 @@ target_state = [5., 0., 0., 0., 0., 0.]
 # r_exact = RunSimulation("Reactive", "laser")
 # d_exact = RunSimulation("Deliberative", "laser")
 
-r_cv = RunSimulation("Reactive", "cv")
-d_cv = RunSimulation("Deliberative", "cv")
+# r_cv = RunSimulation("Reactive", "cv")
+# d_cv = RunSimulation("Deliberative", "cv")
 
 # d = pd.concat((d_laser, d_cv, r_laser, r_cv), axis=1)
 # d = d.T
 # d.to_csv('output')
 
 # Log all data for 1 trial of 1 initial condition for each sensor
-# initial_conditions = [[100., 50., 37., 0., 0., 0.]]
+initial_conditions = [[500., 50., 37., 0., 0., 0.]]
 # FullOutput("Reactive", "laser", laser_error=0.)
 # FullOutput("Deliberative", "laser", laser_error=0.)
 
@@ -149,7 +149,7 @@ d_cv = RunSimulation("Deliberative", "cv")
 # FullOutput("Deliberative", "laser")
 
 # FullOutput("Reactive", "cv")
-# FullOutput("Deliberative", "cv")
+FullOutput("Deliberative", "cv")
 
 # l = np.loadtxt('Deliberativelaser[100, 0, 0, 0.0, 0.0, 0.0]')
 # l = l.reshape(len(l)/12, 12)

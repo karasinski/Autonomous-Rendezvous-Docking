@@ -74,6 +74,7 @@ class Satellite(object):
         return distance_offset < close_enough
 
     def ClohessyWiltshire(self, t):
+        f = open(self.name + self.sensor, 'a+')
         '''Clohessy-Wiltshire equations'''
 
         n = self.n
@@ -85,6 +86,8 @@ class Satellite(object):
 
         self.state = np.array([x, y, z, dx0, dy0, dz0])
         self.t += t
+        np.savetxt(f, np.concatenate([self.state, self.estimated_state]))
+
 
     def sense(self):
         if self.sensor == 'laser':
